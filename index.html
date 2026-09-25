@@ -698,7 +698,7 @@
     if (save.earnBuys == null) save.earnBuys = 0;
     if (save.earnCost == null) save.earnCost = 200 * Math.pow(2, save.earnBuys);
     if (!save.devMode) save.devMode = false;
-        if (save.devLuck === undefined) save.devLuck = null;
+    if (save.devLuck === undefined) save.devLuck = null;
     if (!save.autoUnlocked) save.autoUnlocked = false;
     if (!save.world) save.world = 1;
     if (!save.unlockedWorld) save.unlockedWorld = 1;
@@ -991,1360 +991,647 @@
         o.stop(ctx2.currentTime + 0.6);
       }, 700);
     }
-    function renderAudioBtns() {
-      sfxBtn.textContent = sfxOn ? "🔊" : "🔇";
-      sfxBtn.classList.toggle("off", !sfxOn);
-      bgmBtn.textContent = "🎵";
-      bgmBtn.classList.toggle("off", !bgmOn);
-      fxBtn.textContent = fxOn ? "✨" : "✨";
-      fxBtn.classList.toggle("off", !fxOn);
-      shakeBtn.textContent = shakeOn ? "📳" : "📳";
-      shakeBtn.classList.toggle("off", !shakeOn);
-    }
-    function toggleSfx() {
-      sfxOn = !sfxOn;
-      localStorage.setItem("odds-sfx", sfxOn ? "1" : "0");
-      renderAudioBtns();
-      if (sfxOn) beep(600, 80, 0.06);
-      showToast(sfxOn ? "효과음 ON" : "효과음 OFF");
-    }
-    function toggleBgm() {
-      bgmOn = !bgmOn;
-      localStorage.setItem("odds-bgm", bgmOn ? "1" : "0");
-      renderAudioBtns();
-      getAudio();
-      if (bgmOn) startBgm();
-      else stopBgm();
-      showToast(bgmOn ? "배경음악 ON" : "배경음악 OFF");
-    }
-    function toggleFx() {
-      fxOn = !fxOn;
-      localStorage.setItem("odds-fx", fxOn ? "1" : "0");
-      renderAudioBtns();
-      showToast(fxOn ? "이펙트 ON" : "이펙트 OFF");
-    }
-    function toggleShake() {
-      shakeOn = !shakeOn;
-      localStorage.setItem("odds-shake", shakeOn ? "1" : "0");
-      renderAudioBtns();
-      showToast(shakeOn ? "흔들림 ON" : "흔들림 OFF");
-    }
-    function alarmRare(n) {
-      if (!alarmOn) return;
-      if (n >= 100000) {
-        vibrate([80, 40, 80, 40, 200]);
-        beep(880, 160, 0.1);
-        setTimeout(function() { beep(1175, 220, 0.1); }, 180);
-      } else if (n >= 10000) {
-        vibrate([50, 30, 80]);
-        beep(740, 200, 0.09);
-      } else {
-        vibrate([30, 20, 40]);
-        beep(620, 140, 0.07);
-      }
-      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-        try {
-          new Notification("희귀 숫자 " + n + "/1", {
-            body: "BEST " + (best || n) + "/1 · 이 이상 확률 1/" + n,
-            tag: "odds-rare",
-            silent: false
-          });
-        } catch (e) {}
-      }
-    }
-    async function askNotify() {
-      if (typeof Notification === "undefined") return;
-      if (Notification.permission === "default") {
-        try { await Notification.requestPermission(); } catch (e) {}
-      }
-    }
-    function startWorker() {
-      stopWorker();
-      const src = "setInterval(function(){postMessage(1);}," + getCD() + ");";
-      const blob = new Blob([src], { type: "text/javascript" });
-      worker = new Worker(URL.createObjectURL(blob));
-      worker.onmessage = function() {
-        if (!autoOn) return;
-        tryPick(true);
-      };
-    }
-    function stopWorker() {
-      if (worker) { worker.terminate(); worker = null; }
-    }
-    function catchUp() {
-      if (!autoOn) return;
-      const now = Date.now();
-      const cd = getCD();
-      let missed = Math.floor((now - lastAt) / cd);
-      if (missed < 1) return;
-      if (missed > 8000) missed = 8000;
-      for (var i = 0; i < missed; i++) {
-        lastAt += cd;
-        pick(true, drawN(), i === missed - 1);
-      }
-    }
-    function showToast(msg) {
-      toast.textContent = msg;
-      toast.classList.add("on");
-      clearTimeout(showToast._t);
-      showToast._t = setTimeout(() => toast.classList.remove("on"), 1600);
-    }
-    function renderBest() {
+        function renderBest() {
       if (!best) {
         bestVal.textContent = "아직 없음";
         bestSub.textContent = "큰 숫자일수록 희귀";
         return;
       }
       bestVal.textContent = fmtN(best) + "/1";
-      bestSub.textContent = "이 이상 확률 " + fmtP(pAtLeast(best));
+      bestSub.textContent = tierName(best);
     }
-    function burst(x, y, n) {
-      if (!fxOn) return;
-      for (let i = 0; i < n; i++) {
-        const d = document.createElement("div");
-        d.className = "bit";
-        d.textContent = i % 2 ? "✦" : "✧";
-        d.style.left = x + "px";
-        d.style.top = y + "px";
-        d.style.fontSize = (1 + Math.random() * 1.4) + "rem";
-        d.style.animationDuration = (0.5 + Math.random() * 0.6) + "s";
-        bits.appendChild(d);
-        setTimeout(function() { d.remove(); }, 1100);
+
+    function renderEcon() {
+      goldVal.textContent = Math.floor(save.gold).toLocaleString("ko-KR");
+      goldMainVal.textContent = Math.floor(save.gold).toLocaleString("ko-KR");
+      multVal.textContent = "x" + getLuck();
+      cdVal.textContent = (getCD() / 1000).toFixed(2) + "초";
+      buyBtn.textContent = "확률 2배\n" + save.cost + "G";
+      buySpeedBtn.textContent = save.speedBuys >= SPEED_MAX ? "속도 MAX" : "속도 업\n" + save.speedCost + "G";
+      buyEarnBtn.textContent = save.earnBuys >= EARN_MAX ? "골드 업 MAX" : "골드 업 " + earnAmount() + "→" + (earnAmount() + 1) + "원\n" + save.earnCost + "G";
+      buyBtn.disabled = save.gold < save.cost;
+      buySpeedBtn.disabled = save.gold < save.speedCost || save.speedBuys >= SPEED_MAX;
+      buyEarnBtn.disabled = save.gold < save.earnCost || save.earnBuys >= EARN_MAX;
+      const slider = document.getElementById("cdSlider");
+      if (slider) {
+        slider.min = unlockedMinCD();
+        slider.max = speedHi();
+        slider.value = getCD();
       }
-      const r = document.createElement("div");
-      r.className = "ring";
-      r.style.left = x + "px";
-      r.style.top = y + "px";
-      bits.appendChild(r);
-      setTimeout(function() { r.remove(); }, 700);
+      renderAutoBtn();
+      renderWorlds();
+      updateDevPanel();
     }
-    function flashScreen() {
+
+    function renderAutoBtn() {
+      autoBtn.textContent = autoOn ? "auto ON" : "auto";
+      autoBtn.classList.toggle("on-auto", autoOn);
+      autoBtn.disabled = !save.autoUnlocked;
+      autoBtn.title = save.autoUnlocked ? "자동 뽑기" : "60G로 자동 뽑기 해금";
+    }
+
+    function persist() {
+      save.bests[save.world] = best;
+      try {
+        localStorage.setItem(SAVE, JSON.stringify(save));
+        localStorage.setItem(KEY, String(best));
+      } catch (e) {}
+    }
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add("on");
+      clearTimeout(showToast.t);
+      showToast.t = setTimeout(function() {
+        toast.classList.remove("on");
+      }, 1600);
+    }
+
+    function burst(n) {
+      if (!fxOn) return;
+      const count = n >= 1000000000000000 ? 70 : n >= 1000000000 ? 45 : n >= 1000000 ? 30 : n >= 10000 ? 18 : 8;
+      for (let i = 0; i < count; i++) {
+        const b = document.createElement("span");
+        b.className = "bit";
+        b.textContent = ["✦", "◆", "●", "★"][Math.floor(Math.random() * 4)];
+        b.style.left = Math.random() * 100 + "%";
+        b.style.top = (-5 - Math.random() * 20) + "%";
+        b.style.fontSize = (8 + Math.random() * 14) + "px";
+        b.style.animationDelay = Math.random() * .35 + "s";
+        bits.appendChild(b);
+        setTimeout(function() { b.remove(); }, 1400);
+      }
+    }
+
+    function flash() {
       if (!fxOn) return;
       fxFlash.classList.remove("go");
       void fxFlash.offsetWidth;
       fxFlash.classList.add("go");
     }
+
     function shake() {
       if (!shakeOn) return;
       document.body.classList.remove("shake");
       void document.body.offsetWidth;
       document.body.classList.add("shake");
     }
-    function spawnCutStars(count) {
-      if (!cutStars) return;
+
+    function spawnRing() {
+      if (!fxOn) return;
+      const ring = document.createElement("div");
+      ring.className = "ring";
+      ring.style.left = "50%";
+      ring.style.top = "50%";
+      document.body.appendChild(ring);
+      setTimeout(function() { ring.remove(); }, 800);
+    }
+
+    function openCutscene(n) {
+      if (cutOpen) return;
+      cutOpen = true;
+      autoPausedByCut = autoOn;
+      if (autoOn) toggleAuto();
+      clearTimeout(cutTimer);
+      cutK.textContent = n >= 1000000000000000 ? "초월 출현" : n >= 1000000000000 ? "신화 출현" : n >= 10000000 ? "전설 출현" : "희귀 출현";
+      cutN.textContent = fmtN(n) + "/1";
+      cutT.textContent = "확률 " + fmtP(pExact(n));
+      cut.classList.remove("max");
+      cut.classList.add("on");
       cutStars.innerHTML = "";
-      for (let i = 0; i < count; i++) {
-        const s = document.createElement("div");
+      const starCount = n >= 1000000000000 ? 80 : n >= 10000000 ? 45 : 25;
+      for (let i = 0; i < starCount; i++) {
+        const s = document.createElement("span");
         s.className = "cut-star";
-        s.textContent = i % 3 === 0 ? "★" : "✦";
-        s.style.left = (Math.random() * 100) + "%";
-        s.style.bottom = (-10 - Math.random() * 40) + "%";
-        s.style.fontSize = (0.7 + Math.random() * 1.5) + "rem";
-        s.style.animationDuration = (1.2 + Math.random() * 2.2) + "s";
-        s.style.animationDelay = (Math.random() * 0.9) + "s";
+        s.textContent = Math.random() < .5 ? "✦" : "·";
+        s.style.left = Math.random() * 100 + "%";
+        s.style.top = (60 + Math.random() * 50) + "%";
+        s.style.fontSize = (8 + Math.random() * 16) + "px";
+        s.style.animationDuration = (1.4 + Math.random() * 1.8) + "s";
+        s.style.animationDelay = Math.random() * .5 + "s";
         cutStars.appendChild(s);
       }
+      if (n >= MAX) cut.classList.add("max");
+      beep(n >= 1000000000000 ? 1046 : 784, 260, .12);
+      setTimeout(function() {
+        beep(n >= 1000000000000 ? 1318 : 988, 320, .1);
+      }, 150);
+      vibrate([40, 40, 120]);
+      cutTimer = setTimeout(closeCutscene, 5000);
     }
-    function closeCut() {
-      cut.classList.remove("on", "max");
-      cutOpen = false;
-      if (cutStars) cutStars.innerHTML = "";
+
+    function closeCutscene() {
+      if (!cutOpen) return;
       clearTimeout(cutTimer);
+      cut.classList.remove("on");
+      cutOpen = false;
       if (autoPausedByCut) {
         autoPausedByCut = false;
-        if (autoOn) {
-          autoTimer = setInterval(function() { tryPick(true); }, getCD());
-          if (!worker) startWorker();
-        }
+        if (save.autoUnlocked) toggleAuto();
       }
     }
-    function tone(freq, start, dur, type, vol) {
-      const ctx = getAudio();
-      if (!ctx) return;
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = type || "sawtooth";
-      o.frequency.value = freq;
-      g.gain.setValueAtTime(0.0001, ctx.currentTime + start);
-      g.gain.exponentialRampToValueAtTime(vol || 0.07, ctx.currentTime + start + 0.03);
-      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + start + dur);
-      o.connect(g); g.connect(ctx.destination);
-      o.start(ctx.currentTime + start);
-      o.stop(ctx.currentTime + start + dur + 0.02);
+
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
     }
-    function fanfare(big) {
-      if (!sfxOn) return;
-      getAudio();
-      tone(196, 0, 0.8, "sine", 0.05);
-      tone(262, 0.05, 0.45, "sawtooth", 0.04);
-      tone(330, 0.18, 0.45, "sawtooth", 0.045);
-      tone(392, 0.32, 0.55, "sawtooth", 0.05);
-      tone(523, 0.55, 0.7, "triangle", 0.06);
-      if (big) {
-        tone(659, 0.85, 0.8, "triangle", 0.06);
-        tone(784, 1.1, 1.0, "sawtooth", 0.05);
+
+    function weightedRoll() {
+      const L = getLuck();
+      const r = Math.random();
+
+      // 럭키롤: 낮은 확률로 현재 행운과 관계없이 높은 값 보정
+      const luckyChance = Math.min(.25, LUCKY_ROLL_CHANCE + getBuff("luckyBonus"));
+      if (r < luckyChance) {
+        const t = Math.pow(Math.random(), 3.2);
+        const n = Math.floor(MAX * (0.15 + 0.85 * t));
+        return Math.max(MIN, Math.min(MAX, n));
       }
-    }
-    function playCut(n) {
-      cutOpen = true;
-      cutK.textContent = n >= MAX ? "최대 희귀" : (n >= 1000000 ? "별빛 출현" : "전설 출현");
-      cutN.textContent = fmtN(n) + "/1";
-      cutT.textContent = n >= MAX ? "1억/1 등장" : (n >= 10000000 ? "초희귀 컷씬" : (n >= 1000000 ? "100만 이상 · 별 컷씬" : "희귀 컷씬"));
-      cut.classList.toggle("max", n >= MAX || n >= 1000000);
-      cut.classList.add("on");
-      if (cutStars) cutStars.innerHTML = "";
-      if (n >= 1000000 && fxOn) spawnCutStars(n >= MAX ? 40 : n >= 10000000 ? 32 : 24);
-      fanfare(n >= MAX || n >= 1000000);
-      flashScreen();
-      shake();
-      const rect = oddsEl.getBoundingClientRect();
-      burst(rect.left + rect.width / 2, rect.top + rect.height / 2, 22);
-      if (autoOn) {
-        autoPausedByCut = true;
-        clearInterval(autoTimer);
-        stopWorker();
+
+      // 일반적인 역확률 분포
+      // P(X=n) = 1/n - 1/(n+1)
+      // CDF P(X<=n) = 1 - 1/(n+1)
+      const u = Math.random();
+      let n = Math.floor(1 / (1 - u / Math.max(1, L))) - 1;
+
+      if (L > 1 && Math.random() < Math.min(.95, (L - 1) / L)) {
+        const base = randomInt(MIN, Math.min(MAX, Math.max(MIN, Math.floor(8 * L))));
+        n = Math.max(n, base);
       }
-      clearTimeout(cutTimer);
-      cutTimer = setTimeout(closeCut, n >= MAX ? 3200 : 2200);
-    }
-    cut.addEventListener("pointerup", function(e) {
-      e.preventDefault();
-      closeCut();
-    });
-    function rain(n, glyph) {
-      if (!fxOn) return;
-      for (let i = 0; i < n; i++) {
-        const d = document.createElement("div");
-        d.className = "bit";
-        d.textContent = glyph;
-        d.style.left = Math.random() * 100 + "vw";
-        d.style.fontSize = (1 + Math.random() * 1.2) + "rem";
-        d.style.animationDuration = (0.65 + Math.random() * 0.7) + "s";
-        bits.appendChild(d);
-        setTimeout(() => d.remove(), 1200);
+
+      n = Math.max(MIN, Math.min(MAX, n));
+
+      // 골든롤: 드물게 상위 구간으로 튕김
+      const goldenChance = Math.min(.4, GOLDEN_ROLL_CHANCE + getBuff("goldenBonus"));
+      if (Math.random() < goldenChance) {
+        const t = Math.pow(Math.random(), 2.4);
+        const g = Math.floor(MAX * (.02 + .98 * t));
+        n = Math.max(n, Math.min(MAX, g));
       }
+
+      return n;
     }
-    function persist() {
-      localStorage.setItem(SAVE, JSON.stringify(save));
-      if (best) localStorage.setItem(KEY, String(best));
-    }
-    function renderEcon() {
-      goldVal.textContent = save.gold;
-      if (goldMainVal) goldMainVal.textContent = fmtN(save.gold);
-      multVal.textContent = "x" + luck;
+
+    function tryPick(fromAuto) {
+      if (cutOpen) return;
+      const now = performance.now();
       const cd = getCD();
-      const lo = unlockedMinCD();
-      cdVal.textContent = (cd / 1000).toFixed(2) + "초";
-      buyBtn.innerHTML = "확률 2배<br>" + save.cost + "G";
-      buyBtn.disabled = save.gold < save.cost;
-      if (save.speedBuys >= SPEED_MAX) {
-        buySpeedBtn.innerHTML = "속도 MAX<br>0.10초";
-        buySpeedBtn.disabled = true;
-      } else {
-        buySpeedBtn.innerHTML = "속도 업 (" + save.speedBuys + "/" + SPEED_MAX + ")<br>" + save.speedCost + "G";
-        buySpeedBtn.disabled = save.gold < save.speedCost;
+
+      if (!fromAuto && now - lastAt < cd) return;
+
+      lastAt = now;
+
+      save.gold += earnAmount();
+      const n = weightedRoll();
+
+      last = n;
+
+      const isNewBest = n > best;
+      if (isNewBest) {
+        best = n;
+        save.bests[save.world] = best;
       }
-      const earn = earnAmount();
-      if (buyEarnBtn) {
-        if (save.earnBuys >= EARN_MAX) {
-          buyEarnBtn.innerHTML = "골드 업 MAX (" + earn + "원/회)";
-          buyEarnBtn.disabled = true;
-        } else {
-          buyEarnBtn.innerHTML = "골드 업 " + earn + "→" + (earn + 1) + "원<br>" + save.earnCost + "G";
-          buyEarnBtn.disabled = save.gold < save.earnCost;
-        }
+
+      oddsEl.textContent = fmtN(n) + "/1";
+      oddsEl.className = "odds " + cls(n);
+      tierEl.textContent = tierName(n);
+      lineEl.textContent = "정확한 확률: " + fmtP(pExact(n));
+      subEl.innerHTML = "뽑기 보상 +" + earnAmount() + "G" + (isNewBest ? ' · <span class="newbest">NEW BEST!</span>' : "");
+
+      oddsEl.classList.remove("pop");
+      void oddsEl.offsetWidth;
+      oddsEl.classList.add("pop");
+
+      if (isNewBest) {
+        bestBox.classList.remove("flash");
+        void bestBox.offsetWidth;
+        bestBox.classList.add("flash");
       }
-      const slider = document.getElementById("cdSlider");
-      const hi = speedHi();
-      if (slider) {
-        slider.min = String(lo);
-        slider.max = String(hi);
-        // range is inverted visually: left=slow(high), right=fast(low) via value mapping
-        slider.value = String(hi + lo - cd);
+
+      const rarity = n >= 1000000000000000 ? 4 :
+                     n >= 1000000000000 ? 3 :
+                     n >= 10000000 ? 2 :
+                     n >= 10000 ? 1 : 0;
+
+      if (rarity >= 2) {
+        burst(n);
+        flash();
+        shake();
+        spawnRing();
       }
-    }
-    function sliderToCd(val) {
-      const lo = unlockedMinCD();
-      const hi = speedHi();
-      const v = Number(val);
-      return hi + lo - v;
-    }
-    function buySpeed() {
-      if (save.speedBuys >= SPEED_MAX) {
-        showToast("이미 최대 속도");
-        return;
+
+      playDrawSfx(n, fromAuto);
+
+      if (n >= Number(save.cutAt || 10000)) {
+        openCutscene(n);
       }
-      if (save.gold < save.speedCost) {
-        showToast("골드 부족");
-        return;
+
+      if (n >= MAX) {
+        checkWorldClear(n);
       }
-      save.gold -= save.speedCost;
-      save.speedBuys += 1;
-      save.speedCost += 3;
-      save.userCd = unlockedMinCD();
-      persist();
+
+      renderBest();
       renderEcon();
-      restartAutoTimers();
-      showToast("쿨타임 " + (getCD() / 1000).toFixed(2) + "초");
-      beep(440, 70, 0.07);
-      setTimeout(function() { beep(660, 100, 0.08); }, 80);
+      persist();
+
+      if (!fromAuto) {
+        vibrate(rarity >= 2 ? [30, 40, 80] : 10);
+      }
+
+      if (n >= ALARM_N && alarmOn) {
+        beep(1200, 100, .07);
+      }
+
+      if (cdTimer) clearTimeout(cdTimer);
+      if (!fromAuto) {
+        go.disabled = true;
+        cdTimer = setTimeout(function() {
+          go.disabled = false;
+        }, cd);
+      }
     }
-    function buyMult() {
+
+    function buyLuck() {
       if (save.gold < save.cost) {
-        showToast("골드 부족");
+        showToast("골드가 부족해");
         return;
       }
       save.gold -= save.cost;
       save.buys += 1;
-      save.cost += 10;
-      save.devLuck = null;
-      luck = Math.pow(2, save.buys);
+      save.cost = Math.floor(save.cost * 1.85);
+      luck *= 2;
       persist();
       renderEcon();
-      showToast("확률 x" + luck);
-      beep(523, 80, 0.07);
-      setTimeout(function() { beep(784, 140, 0.08); }, 90);
+      showToast("확률 배율 x" + getLuck());
+      beep(660, 100, .08);
     }
+
+    function buySpeed() {
+      if (save.speedBuys >= SPEED_MAX) {
+        showToast("속도 MAX");
+        return;
+      }
+      if (save.gold < save.speedCost) {
+        showToast("골드가 부족해");
+        return;
+      }
+      save.gold -= save.speedCost;
+      save.speedBuys += 1;
+      save.speedCost = Math.floor(50 + save.speedBuys * 15);
+      const newMin = unlockedMinCD();
+      save.userCd = Math.max(newMin, Math.min(speedHi(), save.userCd));
+      persist();
+      renderEcon();
+      restartAutoTimers();
+      showToast("속도 업!");
+      beep(784, 100, .08);
+    }
+
     function buyEarn() {
       if (save.earnBuys >= EARN_MAX) {
-        showToast("이미 최대 골드");
+        showToast("골드 업 MAX");
         return;
       }
       if (save.gold < save.earnCost) {
-        showToast("골드 부족");
+        showToast("골드가 부족해");
         return;
       }
       save.gold -= save.earnCost;
       save.earnBuys += 1;
-      save.earnCost *= 2;
+      save.earnCost = Math.floor(save.earnCost * 2);
       persist();
       renderEcon();
-      showToast("골드 " + earnAmount() + "원/회");
-      beep(494, 80, 0.07);
-      setTimeout(function() { beep(659, 140, 0.08); }, 90);
-    }
-    function setDevLuck(v) {
-      const val = Math.max(1, Math.floor(Number(v) || 1));
-      luck = val;
-      save.devLuck = val;
-      persist();
-      renderEcon();
-      renderDevPanel();
-      showToast("DEV 배율 x" + val);
-    }
-    function renderDevPanel() {
-      const codeRow = document.getElementById("devCodeRow");
-      const panel = document.getElementById("devPanel");
-      if (codeRow) codeRow.style.display = save.devMode ? "none" : "flex";
-      if (panel) panel.style.display = save.devMode ? "flex" : "none";
-      const speedInput = document.getElementById("devSpeedInput");
-      const luckInput = document.getElementById("devLuckInput");
-      if (speedInput && document.activeElement !== speedInput) speedInput.value = String(getCD());
-      if (luckInput && document.activeElement !== luckInput) luckInput.value = String(luck);
-    }
-    function doReset() {
-      if (!confirm("골드, 배율, BEST를 모두 초기화할까요? (월드 진행은 유지)")) return;
-      if (autoOn) toggleAuto();
-      if (cutOpen) closeCut();
-      const keepWorld = save.unlockedWorld;
-      const keepWorldCur = save.world;
-      const keepReb = save.rebirths;
-      const keepDev = save.devMode;
-      const keepBests = save.bests;
-      save = {
-        gold: 0, cost: 100, buys: 0, speedBuys: 0, speedCost: 50, userCd: 550, cutAt: 10000,
-        autoUnlocked: false, earnBuys: 0, earnCost: 200, devMode: keepDev, devLuck: null,
-        world: keepWorldCur, unlockedWorld: keepWorld, rebirths: keepReb, usedCodes: {}, buffs: {}, bests: keepBests || { 1: 0, 2: 0, 3: 0 }
-      };
-      luck = 1;
-      best = Number(save.bests[save.world] || 0);
-      last = null;
-      lastAt = 0;
-      autoOn = false;
-      persist();
-      renderEcon();
-      renderBest();
-      renderAutoBtn();
-      renderDevPanel();
-      renderWorlds();
-      var ci = document.getElementById("cutInput");
-      if (ci) ci.value = "10000";
-      oddsEl.className = "odds common";
-      oddsEl.textContent = "?/?";
-      tierEl.textContent = "대기 중";
-      lineEl.textContent = "버튼을 누르면 정확한 확률로 뽑힘";
-      subEl.innerHTML = "나올 확률은 숫자마다 다름";
-      setCool(false);
-      showToast("초기화됨");
-    }
-    function drawN(effLuck) {
-      const L = effLuck != null ? effLuck : luck;
-      const u = Math.random();
-      const hitMax = u <= Math.min(1, L / MAX);
-      if (hitMax) return MAX;
-      const n = Math.floor(L / u);
-      return Math.min(MAX, Math.max(MIN, n));
-    }
-    function setCool(on) {
-      go.disabled = on;
-      go.textContent = on ? (getCD() / 1000).toFixed(2) + "초" : "뽑기";
-    }
-    function tryPick(fromAuto, nOpt) {
-      if (cutOpen) return false;
-      const now = Date.now();
-      const cd = getCD();
-      if (now - lastAt < cd - 5) return false;
-      lastAt = now;
-      setCool(true);
-      clearTimeout(cdTimer);
-      cdTimer = setTimeout(function() { setCool(false); }, cd);
-            pick(fromAuto, nOpt, true);
-      return true;
-    }
-
-    function renderAutoBtn() {
-      if (!save.autoUnlocked) {
-        autoBtn.classList.remove("on-auto");
-        autoBtn.textContent = "60G";
-        autoBtn.title = "오토 구매 60골드";
-        return;
-      }
-      autoBtn.classList.toggle("on-auto", autoOn);
-      autoBtn.textContent = autoOn ? "auto ON" : "auto";
-      autoBtn.title = "자동";
-    }
-
-    function buyAuto() {
-      if (save.autoUnlocked) return true;
-      if (save.gold < 60) {
-        showToast("오토 60골드 필요");
-        return false;
-      }
-      save.gold -= 60;
-      save.autoUnlocked = true;
-      persist();
-      renderEcon();
-      renderAutoBtn();
-      showToast("오토 해금!");
-      beep(523, 80, 0.07);
-      setTimeout(function() { beep(784, 120, 0.08); }, 90);
-      return true;
+      showToast("뽑기 보상 +" + earnAmount() + "G");
+      beep(880, 120, .08);
     }
 
     function toggleAuto() {
       if (!save.autoUnlocked) {
-        if (!buyAuto()) return;
+        if (save.gold < 60) {
+          showToast("자동 뽑기 해금 60G 필요");
+          return;
+        }
+        save.gold -= 60;
+        save.autoUnlocked = true;
+        persist();
+        renderEcon();
+        showToast("자동 뽑기 해금!");
       }
-      autoOn = !autoOn;
-      renderAutoBtn();
-      clearInterval(autoTimer);
-      stopWorker();
 
+      autoOn = !autoOn;
       if (autoOn) {
-        askNotify();
-        getAudio();
-        if (bgmOn && !bgmNodes) startBgm();
-        tryPick(true);
+        const cd = getCD();
         autoTimer = setInterval(function() {
           tryPick(true);
-        }, getCD());
+        }, cd);
         startWorker();
-      }
-    }
-
-    function pick(fromAuto, nOpt, showUi) {
-      if (showUi === undefined) showUi = true;
-
-      let luckyRoll = false;
-      let n;
-
-      if (nOpt != null) {
-        n = nOpt;
+        showToast("AUTO ON");
       } else {
-        const luckyP = LUCKY_ROLL_CHANCE + getBuff("luckyBonus");
-        luckyRoll = Math.random() < luckyP;
-        n = drawN(luckyRoll ? getLuck() * 2 : getLuck());
+        clearInterval(autoTimer);
+        autoTimer = null;
+        stopWorker();
+        showToast("AUTO OFF");
       }
+      renderAutoBtn();
+    }
 
-      const goldenRoll = Math.random() <
-        (GOLDEN_ROLL_CHANCE + getBuff("goldenBonus"));
-
-      const pRare = pAtLeast(n);
-      const p = pExact(n);
-
-      last = { n, p, pRare };
-
-      const earn =
-        earnAmount() +
-        (goldenRoll ? GOLDEN_ROLL_BONUS : 0);
-
-      save.gold += earn;
-      persist();
-      renderEcon();
-
-      const isNewBest = n > best;
-      const isMaxRare = n === MAX;
-
-      if (isNewBest) {
-        best = n;
-        save.bests[save.world] = best;
-        localStorage.setItem(KEY, String(best));
-        persist();
-      }
-
-      checkWorldClear(n);
-
-      if (showUi || !fromAuto || n >= 1000) {
-        playDrawSfx(n, !!fromAuto);
-      }
-
-      if (n >= ALARM_N) {
-        alarmRare(n);
-      }
-
-      if (luckyRoll || goldenRoll) {
-        const msgs = [];
-
-        if (luckyRoll) {
-          msgs.push("럭키 롤! 확률 2배");
-        }
-
-        if (goldenRoll) {
-          msgs.push("골든 롤! +" + GOLDEN_ROLL_BONUS + "원");
-        }
-
-        showToast(msgs.join(" · "));
-
-        if (!fromAuto || showUi) {
-          beep(luckyRoll ? 740 : 587, 90, 0.07);
-        }
-      }
-
-      if (showUi) {
-        oddsEl.className = "odds pop " + cls(n);
-        oddsEl.textContent = fmtN(n) + "/1";
-
-        oddsEl.style.fontSize =
-          n >= 1000000
-            ? "clamp(1.6rem, 8vw, 2.6rem)"
-            : "";
-
-        tierEl.textContent =
-          tierName(n) +
-          " · " +
-          fmtN(n) +
-          " 이상 = " +
-          fmtP(pRare);
-
-        lineEl.textContent =
-          fmtN(n) +
-          "/1 이상 희귀 확률 = 1/" +
-          fmtN(n);
-
-        subEl.innerHTML =
-          "딱 이 숫자 확률 " +
-          fmtP(p);
-
-        if (isNewBest) {
-          renderBest();
-
-          bestBox.classList.remove("flash");
-          void bestBox.offsetWidth;
-          bestBox.classList.add("flash");
-
-          subEl.innerHTML +=
-            '<div class="newbest">BEST 갱신</div>';
-        }
-
-        if (n >= (save.cutAt || 10000)) {
-          if (isMaxRare) {
-            subEl.innerHTML +=
-              '<div class="newbest">최대 희귀 ' +
-              fmtN(MAX) +
-              '/1 등장</div>';
-          }
-
-          playCut(n);
-
-        } else if (n >= 1000) {
-          flashScreen();
-          shake();
-
-          const rc = oddsEl.getBoundingClientRect();
-
-          burst(
-            rc.left + rc.width / 2,
-            rc.top + rc.height / 2,
-            10
-          );
-
-        } else if (!fromAuto) {
-          rain(6, "·");
-        }
-
-      } else if (isNewBest) {
-        renderBest();
+    function startWorker() {
+      stopWorker();
+      try {
+        const blob = new Blob([`
+          let timer = null;
+          self.onmessage = function(e) {
+            if (e.data.type === "start") {
+              clearInterval(timer);
+              timer = setInterval(function(){ postMessage("tick"); }, e.data.cd);
+            }
+            if (e.data.type === "stop") {
+              clearInterval(timer);
+              timer = null;
+            }
+          };
+        `], {type:"application/javascript"});
+        worker = new Worker(URL.createObjectURL(blob));
+        worker.onmessage = function() {
+          if (autoOn && !cutOpen) tryPick(true);
+        };
+        worker.postMessage({type:"start", cd:getCD()});
+      } catch (e) {
+        worker = null;
       }
     }
 
-    async function share() {
-      const n = last ? last.n : best;
+    function stopWorker() {
+      if (worker) {
+        try { worker.postMessage({type:"stop"}); worker.terminate(); } catch (e) {}
+        worker = null;
+      }
+    }
 
-      const pRare =
-        last
-          ? last.pRare
-          : (best ? pAtLeast(best) : null);
-
-      if (!n) {
-        showToast("먼저 뽑아줘");
+    function applyCoupon() {
+      const input = document.getElementById("devCodeInput");
+      const code = String(input.value || "").trim().toUpperCase();
+      if (!code) {
+        showToast("코드를 입력해");
         return;
       }
-
-      const text =
-        "확률 숫자 뽑기\n" +
-        "이번: " +
-        fmtN(n) +
-        "/1 (이 이상 확률 " +
-        fmtP(pRare) +
-        ")\n" +
-        "BEST: " +
-        (best ? fmtN(best) + "/1" : "-");
-
-      try {
-        if (navigator.share) {
-          await navigator.share({
-            title: "확률 숫자 뽑기",
-            text: text
-          });
-
-          showToast("공유함");
-          return;
-        }
-      } catch (e) {
-        if (e && e.name === "AbortError") return;
+      const c = COUPONS[code];
+      if (!c) {
+        showToast("없는 코드");
+        return;
       }
-
-      try {
-        await navigator.clipboard.writeText(text);
-        showToast("복사됨");
-      } catch (e2) {
-        const ta = document.createElement("textarea");
-        ta.value = text;
-
-        document.body.appendChild(ta);
-        ta.select();
-
-        document.execCommand("copy");
-        ta.remove();
-
-        showToast("복사됨");
+      if (c.once && save.usedCodes[code]) {
+        showToast("이미 사용한 코드");
+        return;
       }
+      if (c.once) save.usedCodes[code] = true;
+      c.apply();
+      persist();
+      renderEcon();
+      input.value = "";
     }
 
-    function bindPress(el, fn) {
-      const on = function() {
-        el.classList.add("pressed");
-      };
-
-      const off = function() {
-        el.classList.remove("pressed");
-      };
-
-      el.addEventListener("pointerdown", function(e) {
-        e.preventDefault();
-        on();
-        vibrate(12);
-      });
-
-      el.addEventListener("pointerup", function(e) {
-        e.preventDefault();
-        off();
-        fn();
-      });
-
-      el.addEventListener("pointercancel", off);
-      el.addEventListener("pointerleave", off);
+    function updateDevPanel() {
+      const panel = document.getElementById("devPanel");
+      if (!panel) return;
+      panel.style.display = save.devMode ? "flex" : "none";
+      const speedInput = document.getElementById("devSpeedInput");
+      const luckInput = document.getElementById("devLuckInput");
+      if (speedInput) speedInput.value = getCD();
+      if (luckInput) luckInput.value = getLuck();
     }
 
-    bindPress(go, function() {
-      vibrate([8, 18, 12]);
-      getAudio();
+    function applyDevSpeed() {
+      if (!save.devMode) return;
+      const v = Number(document.getElementById("devSpeedInput").value);
+      if (!Number.isFinite(v)) return;
+      setUserCd(v);
+      showToast("속도 " + getCD() + "ms");
+    }
 
-      if (bgmOn && !bgmNodes) {
-        startBgm();
-      }
+    function applyDevLuck() {
+      if (!save.devMode) return;
+      const v = Number(document.getElementById("devLuckInput").value);
+      if (!Number.isFinite(v) || v < 1) return;
+      save.devLuck = Math.floor(v);
+      luck = save.devLuck;
+      persist();
+      renderEcon();
+      showToast("배율 x" + getLuck());
+    }
 
-      tryPick(false);
-    });
+    function turnOffDev() {
+      save.devMode = false;
+      save.devLuck = null;
+      luck = Math.pow(2, save.buys || 0);
+      persist();
+      renderEcon();
+      showToast("개발자 모드 OFF");
+    }
 
-    bindPress(autoBtn, function() {
-      vibrate(10);
-      toggleAuto();
-    });
+    function applyCut() {
+      let v = Number(document.getElementById("cutInput").value);
+      if (!Number.isFinite(v)) v = 10000;
+      v = Math.floor(Math.max(MIN, Math.min(MAX, v)));
+      save.cutAt = v;
+      document.getElementById("cutInput").value = v;
+      persist();
+      showToast("컷씬 " + fmtN(v) + "/1부터");
+    }
 
-    bindPress(shareBtn, function() {
-      vibrate(10);
-      share();
-    });
+    function updateSoundButtons() {
+      sfxBtn.classList.toggle("off", !sfxOn);
+      bgmBtn.classList.toggle("off", !bgmOn);
+      fxBtn.classList.toggle("off", !fxOn);
+      shakeBtn.classList.toggle("off", !shakeOn);
+      sfxBtn.textContent = sfxOn ? "🔊" : "🔇";
+      bgmBtn.textContent = bgmOn ? "🎵" : "🎵×";
+      fxBtn.textContent = fxOn ? "✨" : "✨×";
+      shakeBtn.textContent = shakeOn ? "📳" : "📳×";
+    }
 
-    bindPress(buyBtn, function() {
-      vibrate(10);
-      buyMult();
-    });
-
-    bindPress(buySpeedBtn, function() {
-      vibrate(10);
-      buySpeed();
-    });
-
-    bindPress(buyEarnBtn, function() {
-      vibrate(10);
-      buyEarn();
-    });
-
-    bindPress(resetBtn, function() {
-      vibrate(10);
-      doReset();
-    });
-
-    (function setupSpeedCtrl() {
-      const slider =
-        document.getElementById("cdSlider");
-
-      const slow =
-        document.getElementById("cdSlow");
-
-      const fast =
-        document.getElementById("cdFast");
-
-      if (!slider) return;
-
-      slider.addEventListener("input", function() {
-        setUserCd(sliderToCd(slider.value));
+    function setTab(tab) {
+      document.querySelectorAll(".menu-tabs button").forEach(function(b) {
+        b.classList.toggle("on", b.getAttribute("data-tab") === tab);
       });
-
-      slow.addEventListener("click", function() {
-        setUserCd(getCD() + 25);
-
-        showToast(
-          "느리게 " +
-          (getCD() / 1000).toFixed(2) +
-          "초"
-        );
+      document.querySelectorAll(".menu-sec").forEach(function(s) {
+        s.classList.remove("on");
       });
-
-      fast.addEventListener("click", function() {
-        setUserCd(getCD() - 25);
-
-        showToast(
-          "빠르게 " +
-          (getCD() / 1000).toFixed(2) +
-          "초"
-        );
-      });
-    })();
-
-    (function setupCutSet() {
-      const input =
-        document.getElementById("cutInput");
-
-      const apply =
-        document.getElementById("cutApply");
-
-      if (!input || !apply) return;
-
-      input.value =
-        String(save.cutAt || 10000);
-
-      function applyCut() {
-        var v = parseInt(input.value, 10);
-
-        if (!isFinite(v)) v = 10000;
-
-        v = Math.max(
-          MIN,
-          Math.min(MAX, v)
-        );
-
-        save.cutAt = v;
-        input.value = String(v);
-
-        persist();
-
-        showToast(
-          "컷씬 " +
-          fmtN(v) +
-          "/1 부터"
-        );
-
-        beep(520, 70, 0.06);
-      }
-
-      apply.addEventListener("click", applyCut);
-      input.addEventListener("change", applyCut);
-
-      input.addEventListener("keydown", function(e) {
-        if (e.key === "Enter") {
-          applyCut();
-        }
-      });
-    })();
-
-    (function setupDevCode() {
-      const input =
-        document.getElementById("devCodeInput");
-
-      const apply =
-        document.getElementById("devCodeApply");
-
-      if (!input || !apply) return;
-
-      function tryCode() {
-        const raw =
-          (input.value || "").trim();
-
-        const v =
-          raw.toUpperCase();
-
-        if (!v) return;
-
-        const entry =
-          COUPONS[v] ||
-          COUPONS[raw];
-
-        if (!entry) {
-          showToast("코드 불일치");
-          input.value = "";
-          return;
-        }
-
-        if (
-          entry.once &&
-          save.usedCodes[v]
-        ) {
-          showToast("이미 사용한 쿠폰");
-          input.value = "";
-          return;
-        }
-
-        entry.apply();
-
-        if (entry.once) {
-          save.usedCodes[v] = true;
-        }
-
-        persist();
-        input.value = "";
-
-        renderDevPanel();
-        renderEcon();
-
-        beep(880, 90, 0.08);
-      }
-
-      apply.addEventListener("click", tryCode);
-
-      input.addEventListener("keydown", function(e) {
-        if (e.key === "Enter") {
-          tryCode();
-        }
-      });
-    })();
-
-    (function setupDevPanel() {
-      const speedInput =
-        document.getElementById("devSpeedInput");
-
-      const speedApply =
-        document.getElementById("devSpeedApply");
-
-      const luckInput =
-        document.getElementById("devLuckInput");
-
-      const luckApply =
-        document.getElementById("devLuckApply");
-
-      const offBtn =
-        document.getElementById("devOff");
-
-      if (speedApply && speedInput) {
-        speedApply.addEventListener("click", function() {
-          const v =
-            parseInt(speedInput.value, 10);
-
-          if (!isFinite(v) || v < 1) {
-            showToast("숫자를 입력하세요");
-            return;
-          }
-
-          setUserCd(v);
-          renderDevPanel();
-
-          showToast(
-            "DEV 속도 " +
-            (getCD() / 1000).toFixed(3) +
-            "초"
-          );
-
-          beep(440, 70, 0.06);
-        });
-      }
-
-      if (luckApply && luckInput) {
-        luckApply.addEventListener("click", function() {
-          const v =
-            parseFloat(luckInput.value);
-
-          if (!isFinite(v) || v < 1) {
-            showToast("숫자를 입력하세요");
-            return;
-          }
-
-          setDevLuck(v);
-        });
-      }
-
-      if (offBtn) {
-        offBtn.addEventListener("click", function() {
-          save.devMode = false;
-
-          luck =
-            Math.pow(2, save.buys || 0);
-
-          persist();
-          renderDevPanel();
-          renderEcon();
-          restartAutoTimers();
-
-          showToast("개발자 모드 OFF");
-        });
-      }
-    })();
-
-    bindPress(sfxBtn, function() {
-      vibrate(8);
-      toggleSfx();
-    });
-
-    bindPress(bgmBtn, function() {
-      vibrate(8);
-      toggleBgm();
-    });
-
-    bindPress(fxBtn, function() {
-      vibrate(8);
-      toggleFx();
-    });
-
-    bindPress(shakeBtn, function() {
-      vibrate(8);
-      toggleShake();
-    });
-
-    const menuBtn =
-      document.getElementById("menuBtn");
-
-    const menuBg =
-      document.getElementById("menuBg");
-
-    const menuPanel =
-      document.getElementById("menuPanel");
-
-    const menuClose =
-      document.getElementById("menuClose");
-
-    const titleScreen =
-      document.getElementById("titleScreen");
-
-    const titleStart =
-      document.getElementById("titleStart");
-
-    let menuOpenFlag = false;
-
-    function openMenu(tab) {
-      if (!menuBg || !menuPanel) return;
-
-      menuBg.classList.add("on");
-      menuPanel.classList.add("on");
-
-      menuOpenFlag = true;
-
-      try {
-        history.pushState(
-          { panel: "menu" },
-          ""
-        );
-      } catch (e) {}
-
-      if (tab) {
-        switchTab(tab);
-      }
-
-      try {
-        renderEcon();
-        renderAudioBtns();
-        renderAutoBtn();
-        renderDevPanel();
-        renderWorlds();
-      } catch (e) {}
+      const target = document.getElementById("tab" + tab.charAt(0).toUpperCase() + tab.slice(1));
+      if (target) target.classList.add("on");
+    }
+
+    function openMenu() {
+      document.getElementById("menuBg").classList.add("on");
+      document.getElementById("menuPanel").classList.add("on");
     }
 
     function closeMenu() {
-      if (menuBg) {
-        menuBg.classList.remove("on");
-      }
-
-      if (menuPanel) {
-        menuPanel.classList.remove("on");
-      }
-
-      menuOpenFlag = false;
+      document.getElementById("menuBg").classList.remove("on");
+      document.getElementById("menuPanel").classList.remove("on");
     }
 
-    function switchTab(name) {
-      document
-        .querySelectorAll(".menu-tabs button")
-        .forEach(function(b) {
-          b.classList.toggle(
-            "on",
-            b.getAttribute("data-tab") === name
-          );
-        });
-
-      document
-        .querySelectorAll(".menu-sec")
-        .forEach(function(s) {
-          s.classList.toggle(
-            "on",
-            s.id ===
-              "tab" +
-              name.charAt(0).toUpperCase() +
-              name.slice(1)
-          );
-        });
-
-      const map = {
-        shop: "상점",
-        settings: "설정",
-        menu: "메뉴"
-      };
-
-      const mt =
-        document.getElementById("menuTitle");
-
-      if (mt) {
-        mt.textContent =
-          map[name] || "메뉴";
-      }
-    }
-
-    document
-      .querySelectorAll(".menu-tabs button")
-      .forEach(function(b) {
-        b.addEventListener("click", function() {
-          switchTab(
-            b.getAttribute("data-tab")
-          );
-        });
-      });
-
-    document
-      .querySelectorAll("#worldRow button")
-      .forEach(function(b) {
-        b.addEventListener("click", function() {
-          setWorld(
-            b.getAttribute("data-world")
-          );
-        });
-      });
-
-    const rebirthBtn =
-      document.getElementById("rebirthBtn");
-
-    if (rebirthBtn) {
-      rebirthBtn.addEventListener(
-        "click",
-        function() {
-          vibrate(10);
-          doRebirth();
-        }
-      );
-    }
-
-    const goTitle =
-      document.getElementById("goTitle");
-
-    if (goTitle) {
-      goTitle.addEventListener(
-        "click",
-        function() {
-          closeMenu();
-
-          if (autoOn) {
-            toggleAuto();
-          }
-
-          if (titleScreen) {
-            titleScreen.classList.remove("hide");
-          }
-
-          document.body.classList.add("on-title");
-        }
-      );
-    }
-
-    if (titleScreen) {
+    function goTitle() {
+      closeMenu();
+      if (autoOn) toggleAuto();
       document.body.classList.add("on-title");
+      document.getElementById("titleScreen").classList.remove("hide");
     }
 
-    if (titleStart) {
-      titleStart.addEventListener(
-        "click",
-        function() {
-          if (titleScreen) {
-            titleScreen.classList.add("hide");
-          }
+    function startGame() {
+      document.body.classList.remove("on-title");
+      document.getElementById("titleScreen").classList.add("hide");
+      getAudio();
+      if (bgmOn) startBgm();
+    }
 
-          document.body.classList.remove("on-title");
+    go.addEventListener("click", function() {
+      tryPick(false);
+    });
 
-          renderWorlds();
-          renderEcon();
+    go.addEventListener("touchstart", function() {
+      go.classList.add("pressed");
+    }, {passive:true});
+
+    go.addEventListener("touchend", function() {
+      go.classList.remove("pressed");
+    }, {passive:true});
+
+    buyBtn.addEventListener("click", buyLuck);
+    buySpeedBtn.addEventListener("click", buySpeed);
+    buyEarnBtn.addEventListener("click", buyEarn);
+    autoBtn.addEventListener("click", toggleAuto);
+    shareBtn.addEventListener("click", async function() {
+      const text = "확률 숫자 뽑기 · BEST " + (best ? fmtN(best) + "/1" : "없음");
+      try {
+        if (navigator.share) {
+          await navigator.share({title:"확률 숫자 뽑기", text:text});
+        } else if (navigator.clipboard) {
+          await navigator.clipboard.writeText(text);
+          showToast("복사 완료");
+        } else {
+          showToast(text);
         }
-      );
-    }
+      } catch (e) {}
+    });
 
-    if (goTitle) {
-      // already bound above — ensure title class
-    }
+    resetBtn.addEventListener("click", function() {
+      if (!confirm("정말 초기화할까요? 모든 골드, 강화, 기록이 삭제됩니다.")) return;
+      localStorage.removeItem(SAVE);
+      localStorage.removeItem(KEY);
+      location.reload();
+    });
 
-    window.addEventListener(
-      "popstate",
-      function() {
-        if (menuOpenFlag) {
-          closeMenu();
+    document.getElementById("menuBtn").addEventListener("click", openMenu);
+    document.getElementById("menuClose").addEventListener("click", closeMenu);
+    document.getElementById("menuBg").addEventListener("click", closeMenu);
 
-          try {
-            history.pushState(
-              { game: 1 },
-              ""
-            );
-          } catch (e) {}
+    document.querySelectorAll(".menu-tabs button").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        setTab(btn.getAttribute("data-tab"));
+      });
+    });
+
+    document.querySelectorAll("#worldRow button").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        setWorld(btn.getAttribute("data-world"));
+      });
+    });
+
+    document.getElementById("cdSlider").addEventListener("input", function() {
+      setUserCd(Number(this.value));
+    });
+
+    document.getElementById("cdSlow").addEventListener("click", function() {
+      setUserCd(getCD() + 25);
+    });
+
+    document.getElementById("cdFast").addEventListener("click", function() {
+      setUserCd(getCD() - 25);
+    });
+
+    document.getElementById("cutApply").addEventListener("click", applyCut);
+
+    document.getElementById("cutInput").addEventListener("change", applyCut);
+
+    document.getElementById("devCodeApply").addEventListener("click", applyCoupon);
+
+    document.getElementById("devCodeInput").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") applyCoupon();
+    });
+
+    document.getElementById("devSpeedApply").addEventListener("click", applyDevSpeed);
+    document.getElementById("devLuckApply").addEventListener("click", applyDevLuck);
+    document.getElementById("devOff").addEventListener("click", turnOffDev);
+
+    sfxBtn.addEventListener("click", function() {
+      sfxOn = !sfxOn;
+      localStorage.setItem("odds-sfx", sfxOn ? "1" : "0");
+      updateSoundButtons();
+      if (sfxOn) beep(660, 80, .08);
+    });
+
+    bgmBtn.addEventListener("click", function() {
+      bgmOn = !bgmOn;
+      localStorage.setItem("odds-bgm", bgmOn ? "1" : "0");
+      updateSoundButtons();
+      if (bgmOn) startBgm();
+      else stopBgm();
+    });
+
+    fxBtn.addEventListener("click", function() {
+      fxOn = !fxOn;
+      localStorage.setItem("odds-fx", fxOn ? "1" : "0");
+      updateSoundButtons();
+    });
+
+    shakeBtn.addEventListener("click", function() {
+      shakeOn = !shakeOn;
+      localStorage.setItem("odds-shake", shakeOn ? "1" : "0");
+      updateSoundButtons();
+    });
+
+    document.getElementById("titleStart").addEventListener("click", startGame);
+
+    cut.addEventListener("click", closeCutscene);
+
+    document.getElementById("rebirthBtn").addEventListener("click", doRebirth);
+
+    window.addEventListener("beforeunload", function() {
+      if (autoOn) clearInterval(autoTimer);
+      stopWorker();
+      stopBgm();
+      persist();
+    });
+
+    document.addEventListener("visibilitychange", function() {
+      if (document.hidden) {
+        if (autoOn) {
+          clearInterval(autoTimer);
+          stopWorker();
+        }
+      } else {
+        if (autoOn && !cutOpen) {
+          restartAutoTimers();
         }
       }
-    );
+    });
 
-    try {
-      history.replaceState(
-        { game: 1 },
-        ""
-      );
-    } catch (e) {}
-
-    if (menuBtn) {
-      menuBtn.style.zIndex = "100";
-
-      menuBtn.addEventListener(
-        "click",
-        function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-
-          vibrate(8);
-          openMenu("shop");
-        },
-        { passive: false }
-      );
-    }
-
-    if (menuClose) {
-      menuClose.addEventListener(
-        "click",
-        function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-
-          closeMenu();
-        }
-      );
-    }
-
-    if (menuBg) {
-      menuBg.addEventListener(
-        "click",
-        function(e) {
-          e.preventDefault();
-          closeMenu();
-        }
-      );
-    }
-
-    if (menuPanel) {
-      menuPanel.addEventListener(
-        "click",
-        function(e) {
-          e.stopPropagation();
-        }
-      );
-    }
-
-    (function setupSwipeMenu() {
-      const EDGE_PX = 28;
-      const THRESH = 45;
-
-      let startX = null,
-          startY = null,
-          startEdge = false,
-          ignoreSwipe = false,
-          activeId = null;
-
-      function onDown(e) {
-        if (
-          e.pointerType === "mouse" &&
-          e.button !== 0
-        ) return;
-
-        startX = e.clientX;
-        startY = e.clientY;
-        activeId = e.pointerId;
-
-        startEdge =
-          (window.innerWidth - e.clientX) <= EDGE_PX;
-
-        ignoreSwipe =
-          !!(
-            e.target &&
-            e.target.closest &&
-            e.target.closest("#cdSlider")
-          );
-      }
-
-      function onUp(e) {
-        if (
-          startX == null ||
-          e.pointerId !== activeId
-        ) return;
-
-        const dx =
-          e.clientX - startX;
-
-        const dy =
-          e.clientY - startY;
-
-        const sEdge = startEdge;
-        const ig = ignoreSwipe;
-
-        startX = null;
-        startY = null;
-        startEdge = false;
-        ignoreSwipe = false;
-        activeId = null;
-
-        if (
-          ig ||
-          Math.abs(dy) > 70 ||
-          !menuPanel
-        ) return;
-
-        const isOpen =
-          menuPanel.classList.contains("on");
-
-        if (
-          !isOpen &&
-          sEdge &&
-          dx < -THRESH
-        ) {
-          vibrate(8);
-          openMenu();
-        } else if (
-          isOpen &&
-          dx > THRESH
-        ) {
-          vibrate(8);
-          closeMenu();
-        }
-      }
-
-      document.addEventListener(
-        "pointerdown",
-        onDown,
-        { passive: true }
-      );
-
-      document.addEventListener(
-        "pointerup",
-        onUp,
-        { passive: true }
-      );
-
-      document.addEventListener(
-        "pointercancel",
-        function() {
-          startX = null;
-          startY = null;
-          startEdge = false;
-          ignoreSwipe = false;
-          activeId = null;
-        },
-        { passive: true }
-      );
-    })();
-
-    renderEcon();
-    renderAudioBtns();
-    renderAutoBtn();
-    renderDevPanel();
-    renderWorlds();
-
-    (function() {
-      const sub =
-        document.querySelector(".sub");
-
-      if (
-        sub &&
-        WORLDS[save.world]
-      ) {
-        sub.textContent =
-          "월드" +
-          save.world +
-          " · 최대 " +
-          WORLDS[save.world].label +
-          "/1";
-      }
-    })();
-
-    document.addEventListener(
-      "visibilitychange",
-      function() {
-        if (
-          document.visibilityState === "visible"
-        ) {
-          catchUp();
-          renderBest();
-
-          if (last) {
-            oddsEl.textContent =
-              fmtN(last.n) + "/1";
-
-            oddsEl.className =
-              "odds " + cls(last.n);
-          }
-        }
-      }
-    );
-
-    window.addEventListener(
-      "pagehide",
-      function() {
-        if (best) {
-          localStorage.setItem(
-            KEY,
-            String(best)
-          );
-        }
-      }
-    );
+    // 초기화
+    luck = save.devMode && save.devLuck != null
+      ? save.devLuck
+      : Math.pow(2, save.buys || 0);
 
     renderBest();
+    renderEcon();
+    renderWorlds();
+    updateSoundButtons();
+
+    document.getElementById("cutInput").value = save.cutAt;
+
+    const sub = document.querySelector(".sub");
+    if (sub) sub.textContent = "월드" + save.world + " · 최대 " + WORLDS[save.world].label + "/1";
+
+    document.body.classList.add("on-title");
   </script>
 </body>
-</html>
+</html
