@@ -1,0 +1,1543 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#0b1220" />
+  <title>확률 숫자 뽑기</title>
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      font-family: "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      background: radial-gradient(ellipse at 50% 0%, #1b2a4a 0%, #070b14 72%);
+      color: #eef3ff;
+      overflow-x: hidden;
+      overflow-y: auto;
+      touch-action: manipulation;
+    }
+    body {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 8px);
+      overflow-x: hidden;
+    }
+    .menu-fab {
+      position: fixed !important;
+      top: calc(env(safe-area-inset-top) + 10px);
+      left: 10px;
+      z-index: 100 !important;
+      min-width: 64px;
+      height: 44px;
+      padding: 0 14px;
+      border-radius: 999px;
+      pointer-events: auto !important;
+      touch-action: manipulation;
+      background: linear-gradient(180deg, #5ad0ff, #2a8fc4) !important;
+      color: #081018 !important;
+      box-shadow: 0 4px 14px rgba(0,0,0,.45) !important;
+    }
+    .menu-bg {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.55);
+      z-index: 200;
+      pointer-events: auto;
+    }
+    .menu-bg.on { display: block; }
+    .menu-panel {
+      position: fixed;
+      top: 0; right: 0; bottom: 0;
+      width: min(92vw, 380px);
+      max-width: 100%;
+      background: #121a2a;
+      z-index: 210;
+      transform: translateX(105%);
+      transition: transform .25s ease;
+      display: flex;
+      flex-direction: column;
+      box-shadow: -8px 0 28px rgba(0,0,0,.4);
+      padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+      pointer-events: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .menu-panel.on { transform: translateX(0); }
+    .menu-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 14px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .menu-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 14px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .menu-scroll .econ,
+    .menu-scroll .econ-row,
+    .menu-scroll .speed-ctrl,
+    .menu-scroll .cut-set,
+    .menu-scroll .dev-panel { width: 100%; margin: 0; }
+    .toggle-row {
+      display: flex;
+      gap: 8px;
+      justify-content: space-between;
+    }
+    .toggle-row .fab { flex: 1; height: 44px; border-radius: 12px; }
+    .menu-hint { font-size: .72rem; opacity: .5; margin: 0; text-align: center; }
+    h1 { margin: 8px 0 2px; font-size: clamp(1.15rem, 4.5vw, 1.55rem); letter-spacing: -0.03em; text-align: center; }
+    .sub { margin: 0 0 8px; opacity: .6; font-size: .78rem; text-align: center; }
+    .top-left, .top-right {
+      position: fixed;
+      top: calc(env(safe-area-inset-top) + 10px);
+      z-index: 40;
+      display: flex;
+      gap: 8px;
+    }
+    .top-left { left: 10px; }
+    .top-right { right: 10px; }
+    .fab {
+      min-width: 40px; height: 40px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 0;
+      appearance: none;
+      font-size: .68rem;
+      font-weight: 800;
+      color: #fff;
+      background: rgba(40, 55, 80, .92);
+      box-shadow: 0 3px 10px rgba(0,0,0,.35);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .top-left .fab {
+      width: 40px;
+      padding: 0;
+      border-radius: 50%;
+      font-size: .85rem;
+    }
+    .gold-main {
+      position: fixed;
+      top: calc(env(safe-area-inset-top) + 10px);
+      right: 10px;
+      z-index: 90;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      height: 40px;
+      padding: 0 14px;
+      border-radius: 999px;
+      background: rgba(40, 55, 80, .92);
+      box-shadow: 0 3px 10px rgba(0,0,0,.35);
+      font-size: .85rem;
+      font-weight: 800;
+      color: #ffd56a;
+      white-space: nowrap;
+    }
+    .gold-main .ic { font-size: .95rem; }
+    .fab.off { opacity: .45; filter: grayscale(.5); }
+    .fab.on-auto { background: linear-gradient(180deg, #ffd56a, #e08a2c); color: #1a1208; }
+    .fab.reset { background: rgba(120, 50, 50, .9); }
+    #go.big {
+      width: min(92vw, 400px);
+      height: 88px;
+      margin: 10px 0 18px;
+      border-radius: 24px;
+      font-size: 1.45rem;
+      font-weight: 900;
+      color: #081018;
+      background: linear-gradient(180deg, #b8f3ff, #5ad0ff);
+      box-shadow: 0 8px 0 #1a6d8a, 0 16px 28px rgba(0,0,0,.35);
+    }
+    #go.big:active, #go.big.pressed {
+      transform: translateY(7px);
+      box-shadow: 0 1px 0 #1a6d8a, 0 6px 12px rgba(0,0,0,.28);
+    }
+    #go.big:disabled { opacity: .5; }
+    .econ {
+      width: min(92vw, 400px);
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .econ .card {
+      flex: 1;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 14px;
+      padding: 8px 10px;
+    }
+    .econ .k { font-size: .68rem; opacity: .65; }
+    .econ .v { font-size: 1.02rem; font-weight: 800; color: #ffd56a; }
+    #buy, #buySpeed, #buyEarn {
+      flex: 1.15;
+      height: auto;
+      min-height: 52px;
+      font-size: .82rem;
+      line-height: 1.25;
+      color: #1a1208;
+      background: linear-gradient(180deg, #ffe08a, #d4a017);
+      box-shadow: 0 5px 0 #8a4d14;
+      border-radius: 14px;
+    }
+    #buySpeed {
+      background: linear-gradient(180deg, #a8f0c0, #3db87a);
+      box-shadow: 0 5px 0 #1a6a40;
+    }
+    #buyEarn {
+      width: 100%;
+      background: linear-gradient(180deg, #ffc2a8, #d46a30);
+      box-shadow: 0 5px 0 #8a3d14;
+    }
+    #buy:disabled, #buySpeed:disabled, #buyEarn:disabled { opacity: .4; filter: grayscale(.4); }
+    .econ-row {
+      width: min(92vw, 400px);
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .speed-ctrl {
+      width: min(92vw, 400px);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .speed-ctrl input[type=range] {
+      flex: 1;
+      accent-color: #5ad0ff;
+      height: 28px;
+    }
+    .cd-btn {
+      height: 32px;
+      padding: 0 10px;
+      border-radius: 10px;
+      font-size: .72rem;
+      color: #fff;
+      background: rgba(40,55,80,.9);
+      box-shadow: 0 2px 0 #151c28;
+    }
+    .cut-set {
+      width: min(92vw, 400px);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .cut-label { font-size: .72rem; opacity: .75; white-space: nowrap; }
+    #cutInput, .dev-input {
+      flex: 1;
+      min-width: 0;
+      height: 32px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.15);
+      background: rgba(0,0,0,.25);
+      color: #ffd56a;
+      font-weight: 800;
+      font-size: .9rem;
+      padding: 0 10px;
+      text-align: right;
+    }
+    #devCodeInput.dev-input {
+      color: #7ad7ff;
+      text-align: left;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .dev-panel {
+      width: min(92vw, 400px);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: rgba(122,215,255,.08);
+      border: 1px solid rgba(122,215,255,.3);
+      border-radius: 14px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+    }
+    .dev-panel .cut-set { margin-bottom: 0; width: 100%; }
+    .best {
+      width: min(92vw, 400px);
+      background: rgba(255,213,106,.08);
+      border: 1px solid rgba(255,213,106,.28);
+      border-radius: 16px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .best .k { font-size: .72rem; letter-spacing: .08em; opacity: .7; }
+    .best .v { font-size: 1.15rem; font-weight: 800; color: #ffd56a; }
+    .best .s { font-size: .75rem; opacity: .65; text-align: right; }
+    .best.flash { animation: flash .7s ease; }
+    @keyframes flash {
+      0%, 100% { box-shadow: none; }
+      40% { box-shadow: 0 0 0 3px rgba(255,213,106,.55); }
+    }
+    .stage {
+      flex: 1; width: 100%; max-width: 420px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .tier { font-size: .78rem; opacity: .7; margin-bottom: 6px; }
+    .odds { font-size: clamp(2.5rem, 12vw, 4rem); font-weight: 900; line-height: 1; user-select: none; }
+    .odds.pop { animation: pop .4s cubic-bezier(.2,1.5,.3,1); }
+    @keyframes pop {
+      0% { transform: scale(1); }
+      35% { transform: scale(1.16) rotate(-3deg); }
+      100% { transform: scale(1); }
+    }
+    .meta { margin-top: 12px; text-align: center; min-height: 3.6rem; }
+    .line { font-size: .98rem; }
+    .subline { margin-top: 6px; font-size: .82rem; opacity: .62; line-height: 1.4; }
+    .newbest { color: #ffd56a; font-weight: 800; }
+    button:disabled { opacity: .45; }
+    button {
+      appearance: none; border: 0;
+      font-weight: 800; cursor: pointer;
+    }
+    .toast {
+      position: fixed; left: 50%; bottom: 110px; transform: translateX(-50%);
+      background: #fff; color: #111; padding: 8px 14px; border-radius: 999px;
+      font-size: .82rem; font-weight: 700; opacity: 0; pointer-events: none;
+      transition: opacity .2s; z-index: 20;
+    }
+    .toast.on { opacity: 1; }
+    .myth { color: #ffd56a; text-shadow: 0 0 24px rgba(255,210,80,.5); }
+    .legend { color: #e2b0ff; }
+    .rare { color: #7ad7ff; }
+    .uncommon { color: #b6f5c6; }
+    .common { color: #d7e6ff; }
+    .mythic { color: #ff3b3b; text-shadow: 0 0 26px rgba(255,59,59,.6); }
+    .transcend {
+      background: linear-gradient(90deg, #4aa8ff, #9a4aff, #d23aff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+      text-shadow: none;
+      filter: drop-shadow(0 0 20px rgba(140,80,255,.5));
+    }
+    .eternal {
+      background: linear-gradient(90deg, #ff3b3b, #ffae00, #fff700, #3bff6e, #3bd0ff, #6a3bff, #ff3bcf, #ff3b3b);
+      background-size: 300% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+      text-shadow: none;
+      animation: rainbow-shift 3s linear infinite;
+    }
+    @keyframes rainbow-shift {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 300% 50%; }
+    }
+    .bits { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+    .bit { position: absolute; animation: fall 1.05s ease-in forwards; }
+    @keyframes fall {
+      from { transform: translateY(-16px) rotate(0); opacity: 1; }
+      to { transform: translateY(112vh) rotate(240deg); opacity: .12; }
+    }
+    .fx-flash {
+      position: fixed; inset: 0; pointer-events: none; z-index: 30;
+      background: #fff; opacity: 0;
+    }
+    .fx-flash.go { animation: whiteflash .35s ease; }
+    @keyframes whiteflash {
+      0% { opacity: .55; }
+      100% { opacity: 0; }
+    }
+    body.shake { animation: shake .45s linear; }
+    @keyframes shake {
+      0%,100% { transform: translate(0,0); }
+      20% { transform: translate(-6px, 3px); }
+      40% { transform: translate(7px, -2px); }
+      60% { transform: translate(-4px, -3px); }
+      80% { transform: translate(5px, 2px); }
+    }
+    .cut {
+      position: fixed; inset: 0; z-index: 50;
+      display: none; align-items: center; justify-content: center;
+      background: #000;
+      color: #fff;
+      text-align: center;
+      padding: 24px;
+    }
+    .cut.on { display: flex; }
+    .cut.max { background: radial-gradient(circle at 50% 40%, #4a2a00 0%, #000 70%); }
+    .cut-inner { width: min(92vw, 420px); position: relative; z-index: 2; }
+    .cut-stars {
+      position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 1;
+    }
+    .cut-star {
+      position: absolute;
+      color: #ffe9a0;
+      font-size: 1rem;
+      animation: starfloat linear forwards;
+      text-shadow: 0 0 8px rgba(255, 220, 100, .9);
+    }
+    @keyframes starfloat {
+      0% { transform: translateY(20px) scale(.4); opacity: 0; }
+      15% { opacity: 1; }
+      100% { transform: translateY(-100vh) scale(1.2) rotate(40deg); opacity: 0; }
+    }
+    .cut-k {
+      letter-spacing: .28em;
+      font-size: .78rem;
+      opacity: 0;
+      animation: cin .4s .1s forwards;
+    }
+    .cut-n {
+      font-size: clamp(3rem, 16vw, 5.2rem);
+      font-weight: 900;
+      color: #ffd56a;
+      margin: 12px 0;
+      opacity: 0;
+      transform: scale(2.4);
+      animation: slam .55s .35s cubic-bezier(.2,1.6,.3,1) forwards;
+      text-shadow: 0 0 30px rgba(255,210,80,.7);
+    }
+    .cut-t { opacity: 0; animation: cin .4s .7s forwards; font-size: .95rem; }
+    .cut-hint { margin-top: 22px; opacity: 0; animation: cin .4s 1s forwards; font-size: .78rem; }
+    @keyframes cin { to { opacity: .9; } }
+    @keyframes slam {
+      to { opacity: 1; transform: scale(1); }
+    }
+    .ring {
+      position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px;
+      border: 2px solid rgba(255,213,106,.7); border-radius: 50%;
+      animation: ring 700ms ease-out forwards; pointer-events: none;
+    }
+    @keyframes ring {
+      from { transform: scale(.3); opacity: .9; }
+      to { transform: scale(3.2); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bits" id="bits"></div>
+  <div class="fx-flash" id="fxFlash"></div>
+  <div class="cut" id="cut">
+    <div class="cut-stars" id="cutStars"></div>
+    <div class="cut-inner">
+      <div class="cut-k" id="cutK">전설 출현</div>
+      <div class="cut-n" id="cutN">10000/1</div>
+      <div class="cut-t" id="cutT">희귀 컷씬</div>
+      <div class="cut-hint">화면을 터치하면 닫힘</div>
+    </div>
+  </div>
+
+  <button type="button" class="fab menu-fab" id="menuBtn" title="메뉴">메뉴</button>
+  <div class="gold-main" id="goldMain"><span class="ic">🪙</span><span id="goldMainVal">0</span></div>
+
+  <div class="menu-bg" id="menuBg"></div>
+  <div class="menu-panel" id="menuPanel">
+    <div class="menu-head">
+      <strong>메뉴</strong>
+      <button type="button" class="fab" id="menuClose">닫기</button>
+    </div>
+    <div class="menu-scroll">
+      <div class="econ">
+        <div class="card">
+          <div class="k">GOLD</div>
+          <div class="v" id="goldVal">0</div>
+        </div>
+        <div class="card">
+          <div class="k">확률 배율</div>
+          <div class="v" id="multVal">x1</div>
+        </div>
+        <div class="card">
+          <div class="k">쿨타임</div>
+          <div class="v" id="cdVal">0.55초</div>
+        </div>
+      </div>
+      <div class="econ-row">
+        <button id="buy" type="button">확률 2배<br>100G</button>
+        <button id="buySpeed" type="button">속도 업<br>50G</button>
+      </div>
+      <div class="econ-row">
+        <button id="buyEarn" type="button">골드 업 1→2원<br>200G</button>
+      </div>
+      <div class="econ-row">
+        <button type="button" class="fab" id="auto" title="자동" style="flex:1;height:44px;border-radius:12px;">auto</button>
+        <button type="button" class="fab" id="share" title="공유" style="flex:1;height:44px;border-radius:12px;">공유</button>
+        <button type="button" class="fab reset" id="reset" title="초기화" style="flex:1;height:44px;border-radius:12px;">초기화</button>
+      </div>
+      <div class="speed-ctrl">
+        <button type="button" id="cdSlow" class="cd-btn">느림</button>
+        <input type="range" id="cdSlider" min="100" max="550" step="5" value="550" />
+        <button type="button" id="cdFast" class="cd-btn">빠름</button>
+      </div>
+      <div class="cut-set">
+        <span class="cut-label">컷씬</span>
+        <input type="number" id="cutInput" min="2" max="1000000000000000000" step="1" value="10000" />
+        <span class="cut-label">/1 부터</span>
+        <button type="button" id="cutApply" class="cd-btn">적용</button>
+      </div>
+      <div class="cut-set" id="devCodeRow">
+        <span class="cut-label">코드</span>
+        <input type="text" id="devCodeInput" class="dev-input" maxlength="16" placeholder="코드 입력" autocomplete="off" autocapitalize="characters" />
+        <button type="button" id="devCodeApply" class="cd-btn">확인</button>
+      </div>
+      <div class="dev-panel" id="devPanel" style="display:none;">
+        <p class="menu-hint" style="opacity:.9;color:#7ad7ff;margin:0;">🛠 개발자 모드 ON</p>
+        <div class="cut-set">
+          <span class="cut-label">속도(ms)</span>
+          <input type="number" id="devSpeedInput" class="dev-input" min="1" step="1" />
+          <button type="button" id="devSpeedApply" class="cd-btn">적용</button>
+        </div>
+        <div class="cut-set">
+          <span class="cut-label">배율(x)</span>
+          <input type="number" id="devLuckInput" class="dev-input" min="1" step="1" />
+          <button type="button" id="devLuckApply" class="cd-btn">적용</button>
+        </div>
+        <button type="button" class="fab reset" id="devOff" style="width:100%;height:36px;border-radius:10px;">개발자 모드 끄기</button>
+      </div>
+      <div class="toggle-row">
+        <button type="button" class="fab" id="sfxBtn" title="효과음">🔊</button>
+        <button type="button" class="fab" id="bgmBtn" title="배경음악">🎵</button>
+        <button type="button" class="fab" id="fxBtn" title="이펙트">✨</button>
+        <button type="button" class="fab" id="shakeBtn" title="흔들림">📳</button>
+      </div>
+      <p class="menu-hint">🔊효과음 · 🎵BGM · ✨이펙트 · 📳흔들림</p>
+    </div>
+  </div>
+
+  <h1>확률 숫자 뽑기</h1>
+  <p class="sub">2/1 ~ 100경(1Qi)/1 · 뽑기 1회 = 골드 1</p>
+
+  <div class="best" id="bestBox">
+    <div>
+      <div class="k">BEST · 가장 희귀</div>
+      <div class="v" id="bestVal">아직 없음</div>
+    </div>
+    <div class="s" id="bestSub">큰 숫자일수록 희귀</div>
+  </div>
+
+  <div class="stage">
+    <div class="tier" id="tier">대기 중</div>
+    <div class="odds common" id="odds">?/?</div>
+    <div class="meta">
+      <div class="line" id="line">버튼을 누르면 정확한 확률로 뽑힘</div>
+      <div class="subline" id="sub">나올 확률은 숫자마다 다름</div>
+    </div>
+  </div>
+
+  <button id="go" class="big" type="button">뽑기</button>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const MIN = 2, MAX = 1000000000000000000;
+    const KEY = "odds-draw-best-v2";
+    const SAVE = "odds-draw-save-v1";
+
+    const oddsEl = document.getElementById("odds");
+    const tierEl = document.getElementById("tier");
+    const lineEl = document.getElementById("line");
+    const subEl = document.getElementById("sub");
+    const bestBox = document.getElementById("bestBox");
+    const bestVal = document.getElementById("bestVal");
+    const bestSub = document.getElementById("bestSub");
+    const goldVal = document.getElementById("goldVal");
+    const goldMainVal = document.getElementById("goldMainVal");
+    const multVal = document.getElementById("multVal");
+    const buyBtn = document.getElementById("buy");
+    const buySpeedBtn = document.getElementById("buySpeed");
+    const buyEarnBtn = document.getElementById("buyEarn");
+    const cdVal = document.getElementById("cdVal");
+    const go = document.getElementById("go");
+    const autoBtn = document.getElementById("auto");
+    const shareBtn = document.getElementById("share");
+    const resetBtn = document.getElementById("reset");
+    const sfxBtn = document.getElementById("sfxBtn");
+    const bgmBtn = document.getElementById("bgmBtn");
+    const fxBtn = document.getElementById("fxBtn");
+    const shakeBtn = document.getElementById("shakeBtn");
+    const cutStars = document.getElementById("cutStars");
+    const toast = document.getElementById("toast");
+    const bits = document.getElementById("bits");
+    const fxFlash = document.getElementById("fxFlash");
+    const cut = document.getElementById("cut");
+    const cutK = document.getElementById("cutK");
+    const cutN = document.getElementById("cutN");
+    const cutT = document.getElementById("cutT");
+    let cutTimer = null;
+    let cutOpen = false;
+    let autoPausedByCut = false;
+
+    const CD_BASE = 550;
+    const CD_MIN = 100;
+    const SPEED_MAX = 10;
+    const EARN_MAX = 4;
+    const LUCKY_ROLL_CHANCE = 0.02;
+    const GOLDEN_ROLL_CHANCE = 0.03;
+    const GOLDEN_ROLL_BONUS = 3;
+    const ALARM_N = 1000;
+    const DEV_CODE = "EA333";
+    const DEV_CD_MIN = 1;
+    const DEV_CD_MAX = 600000;
+    let save = { gold: 0, cost: 100, buys: 0, speedBuys: 0, speedCost: 50, userCd: 550, cutAt: 10000, autoUnlocked: false, earnBuys: 0, earnCost: 200, devMode: false, devLuck: null };
+    try { save = Object.assign(save, JSON.parse(localStorage.getItem(SAVE) || "{}")); } catch (e) {}
+    if (save.speedBuys == null) save.speedBuys = 0;
+    if (save.speedCost == null) save.speedCost = 50 + save.speedBuys * 3;
+    if (save.userCd == null) save.userCd = 550;
+    if (save.cutAt == null) save.cutAt = 10000;
+    if (save.earnBuys == null) save.earnBuys = 0;
+    if (save.earnCost == null) save.earnCost = 200 * Math.pow(2, save.earnBuys);
+    if (!save.devMode) save.devMode = false;
+    if (save.devLuck === undefined) save.devLuck = null;
+    if (!save.autoUnlocked) save.autoUnlocked = false;
+    save.cutAt = Math.max(MIN, Math.min(MAX, Number(save.cutAt) || 10000));
+    let last = null;
+    let best = Number(localStorage.getItem(KEY) || 0);
+    let luck = Math.pow(2, save.buys || 0);
+    if (save.devMode && save.devLuck != null) luck = save.devLuck;
+    function speedHi() { return save.devMode ? DEV_CD_MAX : CD_BASE; }
+    function unlockedMinCD() {
+      if (save.devMode) return DEV_CD_MIN;
+      return Math.max(CD_MIN, Math.round(CD_BASE - save.speedBuys * ((CD_BASE - CD_MIN) / SPEED_MAX)));
+    }
+    function getCD() {
+      const lo = unlockedMinCD();
+      const hi = speedHi();
+      save.userCd = Math.max(lo, Math.min(hi, save.userCd || CD_BASE));
+      return save.userCd;
+    }
+    function setUserCd(ms) {
+      const lo = unlockedMinCD();
+      const hi = speedHi();
+      save.userCd = Math.max(lo, Math.min(hi, Math.round(ms)));
+      persist();
+      renderEcon();
+      restartAutoTimers();
+    }
+    function restartAutoTimers() {
+      if (!autoOn) return;
+      clearInterval(autoTimer);
+      stopWorker();
+      const cd = getCD();
+      autoTimer = setInterval(function() { tryPick(true); }, cd);
+      startWorker();
+    }
+    let lastAt = 0;
+    let autoOn = false;
+    let autoTimer = null;
+    let cdTimer = null;
+    let worker = null;
+    let audioCtx = null;
+    let alarmOn = true;
+    let sfxOn = localStorage.getItem("odds-sfx") !== "0";
+    let bgmOn = localStorage.getItem("odds-bgm") === "1";
+    let fxOn = localStorage.getItem("odds-fx") !== "0";
+    let shakeOn = localStorage.getItem("odds-shake") !== "0";
+    let bgmNodes = null;
+    let bgmTimer = null;
+
+    function pAtLeast(n) { return Math.min(1, luck / n); }
+    function earnAmount() { return 1 + (save.earnBuys || 0); }
+    function pExact(n) {
+      if (n === MAX) return 1 / MAX;
+      if (n === MIN) return 1 - 1 / (MIN + 1);
+      return 1 / n - 1 / (n + 1);
+    }
+    function fmtP(p) {
+      if (p >= 0.01) return (p * 100).toFixed(4) + "%";
+      if (p >= 0.0001) return (p * 100).toFixed(6) + "%";
+      return (p * 100).toFixed(8) + "%";
+    }
+    const NUM_UNITS = [
+      { v: 1000000000000000000, s: "Qi" },
+      { v: 1000000000000000, s: "Qa" },
+      { v: 1000000000000, s: "T" },
+      { v: 1000000000, s: "B" },
+      { v: 1000000, s: "M" },
+      { v: 1000, s: "K" }
+    ];
+    function fmtN(n) {
+      for (let i = 0; i < NUM_UNITS.length; i++) {
+        const u = NUM_UNITS[i];
+        if (n >= u.v) {
+          const val = n / u.v;
+          let s = val.toFixed(val >= 100 ? 0 : val >= 10 ? 1 : 2);
+          s = s.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
+          return s + u.s;
+        }
+      }
+      return n.toLocaleString("ko-KR");
+    }
+    function cls(n) {
+      if (n >= 1000000000000000000) return "eternal";
+      if (n >= 1000000000000000) return "transcend";
+      if (n >= 1000000000000) return "mythic";
+      if (n >= 10000000) return "myth";
+      if (n >= 100000) return "myth";
+      if (n >= 10000) return "legend";
+      if (n >= 1000) return "rare";
+      if (n >= 11) return "uncommon";
+      return "common";
+    }
+    function tierName(n) {
+      if (n >= 1000000000000000000) return "영원";
+      if (n >= 1000000000000000) return "초월";
+      if (n >= 1000000000000) return "신화";
+      if (n >= 10000000) return "전설+";
+      if (n >= 100000) return "전설";
+      if (n >= 10000) return "에픽";
+      if (n >= 1000) return "레어";
+      if (n >= 11) return "보통";
+      return "흔함";
+    }
+    function vibrate(p) { if (navigator.vibrate) navigator.vibrate(p); }
+    function getAudio() {
+      if (!audioCtx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) audioCtx = new AC();
+      }
+      if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+      return audioCtx;
+    }
+    function beep(freq, dur, vol) {
+      if (!sfxOn) return;
+      const ctx = getAudio();
+      if (!ctx) return;
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "square";
+      o.frequency.value = freq;
+      g.gain.value = vol || 0.08;
+      o.connect(g); g.connect(ctx.destination);
+      o.start();
+      setTimeout(function() { o.stop(); }, dur || 180);
+    }
+    function playDrawSfx(n, fromAuto) {
+      if (!sfxOn) return;
+      const ctx = getAudio();
+      if (!ctx) return;
+      const vol = fromAuto ? 0.025 : 0.07;
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "triangle";
+      o.frequency.value = n >= 10000 ? 880 : n >= 1000 ? 660 : 420 + Math.min(n, 200);
+      g.gain.setValueAtTime(vol, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (fromAuto ? 0.05 : 0.12));
+      o.connect(g); g.connect(ctx.destination);
+      o.start();
+      o.stop(ctx.currentTime + 0.14);
+    }
+    function stopBgm() {
+      if (bgmTimer) { clearInterval(bgmTimer); bgmTimer = null; }
+      if (bgmNodes) {
+        try { bgmNodes.forEach(function(n) { n.stop(); }); } catch (e) {}
+        bgmNodes = null;
+      }
+    }
+    function startBgm() {
+      stopBgm();
+      const ctx = getAudio();
+      if (!ctx || !bgmOn) return;
+      const freqs = [110, 164.81, 220, 261.63];
+      bgmNodes = [];
+      freqs.forEach(function(f, i) {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = i % 2 ? "sine" : "triangle";
+        o.frequency.value = f;
+        g.gain.value = 0.012 + i * 0.004;
+        o.connect(g); g.connect(ctx.destination);
+        o.start();
+        bgmNodes.push(o);
+      });
+      let step = 0;
+      bgmTimer = setInterval(function() {
+        if (!bgmOn || !bgmNodes) return;
+        step++;
+        const melody = [330, 392, 440, 392, 349, 330, 294, 330];
+        const ctx2 = getAudio();
+        if (!ctx2) return;
+        const o = ctx2.createOscillator();
+        const g = ctx2.createGain();
+        o.type = "sine";
+        o.frequency.value = melody[step % melody.length];
+        g.gain.setValueAtTime(0.025, ctx2.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx2.currentTime + 0.55);
+        o.connect(g); g.connect(ctx2.destination);
+        o.start();
+        o.stop(ctx2.currentTime + 0.6);
+      }, 700);
+    }
+    function renderAudioBtns() {
+      sfxBtn.textContent = sfxOn ? "🔊" : "🔇";
+      sfxBtn.classList.toggle("off", !sfxOn);
+      bgmBtn.textContent = "🎵";
+      bgmBtn.classList.toggle("off", !bgmOn);
+      fxBtn.textContent = fxOn ? "✨" : "✨";
+      fxBtn.classList.toggle("off", !fxOn);
+      shakeBtn.textContent = shakeOn ? "📳" : "📳";
+      shakeBtn.classList.toggle("off", !shakeOn);
+    }
+    function toggleSfx() {
+      sfxOn = !sfxOn;
+      localStorage.setItem("odds-sfx", sfxOn ? "1" : "0");
+      renderAudioBtns();
+      if (sfxOn) beep(600, 80, 0.06);
+      showToast(sfxOn ? "효과음 ON" : "효과음 OFF");
+    }
+    function toggleBgm() {
+      bgmOn = !bgmOn;
+      localStorage.setItem("odds-bgm", bgmOn ? "1" : "0");
+      renderAudioBtns();
+      getAudio();
+      if (bgmOn) startBgm();
+      else stopBgm();
+      showToast(bgmOn ? "배경음악 ON" : "배경음악 OFF");
+    }
+    function toggleFx() {
+      fxOn = !fxOn;
+      localStorage.setItem("odds-fx", fxOn ? "1" : "0");
+      renderAudioBtns();
+      showToast(fxOn ? "이펙트 ON" : "이펙트 OFF");
+    }
+    function toggleShake() {
+      shakeOn = !shakeOn;
+      localStorage.setItem("odds-shake", shakeOn ? "1" : "0");
+      renderAudioBtns();
+      showToast(shakeOn ? "흔들림 ON" : "흔들림 OFF");
+    }
+    function alarmRare(n) {
+      if (!alarmOn) return;
+      if (n >= 100000) {
+        vibrate([80, 40, 80, 40, 200]);
+        beep(880, 160, 0.1);
+        setTimeout(function() { beep(1175, 220, 0.1); }, 180);
+      } else if (n >= 10000) {
+        vibrate([50, 30, 80]);
+        beep(740, 200, 0.09);
+      } else {
+        vibrate([30, 20, 40]);
+        beep(620, 140, 0.07);
+      }
+      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+        try {
+          new Notification("희귀 숫자 " + n + "/1", {
+            body: "BEST " + (best || n) + "/1 · 이 이상 확률 1/" + n,
+            tag: "odds-rare",
+            silent: false
+          });
+        } catch (e) {}
+      }
+    }
+    async function askNotify() {
+      if (typeof Notification === "undefined") return;
+      if (Notification.permission === "default") {
+        try { await Notification.requestPermission(); } catch (e) {}
+      }
+    }
+    function startWorker() {
+      stopWorker();
+      const src = "setInterval(function(){postMessage(1);}," + getCD() + ");";
+      const blob = new Blob([src], { type: "text/javascript" });
+      worker = new Worker(URL.createObjectURL(blob));
+      worker.onmessage = function() {
+        if (!autoOn) return;
+        tryPick(true);
+      };
+    }
+    function stopWorker() {
+      if (worker) { worker.terminate(); worker = null; }
+    }
+    function catchUp() {
+      if (!autoOn) return;
+      const now = Date.now();
+      const cd = getCD();
+      let missed = Math.floor((now - lastAt) / cd);
+      if (missed < 1) return;
+      if (missed > 8000) missed = 8000;
+      for (var i = 0; i < missed; i++) {
+        lastAt += cd;
+        pick(true, drawN(), i === missed - 1);
+      }
+    }
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add("on");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => toast.classList.remove("on"), 1600);
+    }
+    function renderBest() {
+      if (!best) {
+        bestVal.textContent = "아직 없음";
+        bestSub.textContent = "큰 숫자일수록 희귀";
+        return;
+      }
+      bestVal.textContent = fmtN(best) + "/1";
+      bestSub.textContent = "이 이상 확률 " + fmtP(pAtLeast(best));
+    }
+    function burst(x, y, n) {
+      if (!fxOn) return;
+      for (let i = 0; i < n; i++) {
+        const d = document.createElement("div");
+        d.className = "bit";
+        d.textContent = i % 2 ? "✦" : "✧";
+        d.style.left = x + "px";
+        d.style.top = y + "px";
+        d.style.fontSize = (1 + Math.random() * 1.4) + "rem";
+        d.style.animationDuration = (0.5 + Math.random() * 0.6) + "s";
+        bits.appendChild(d);
+        setTimeout(function() { d.remove(); }, 1100);
+      }
+      const r = document.createElement("div");
+      r.className = "ring";
+      r.style.left = x + "px";
+      r.style.top = y + "px";
+      bits.appendChild(r);
+      setTimeout(function() { r.remove(); }, 700);
+    }
+    function flashScreen() {
+      if (!fxOn) return;
+      fxFlash.classList.remove("go");
+      void fxFlash.offsetWidth;
+      fxFlash.classList.add("go");
+    }
+    function shake() {
+      if (!shakeOn) return;
+      document.body.classList.remove("shake");
+      void document.body.offsetWidth;
+      document.body.classList.add("shake");
+    }
+    function spawnCutStars(count) {
+      if (!cutStars) return;
+      cutStars.innerHTML = "";
+      for (let i = 0; i < count; i++) {
+        const s = document.createElement("div");
+        s.className = "cut-star";
+        s.textContent = i % 3 === 0 ? "★" : "✦";
+        s.style.left = (Math.random() * 100) + "%";
+        s.style.bottom = (-10 - Math.random() * 40) + "%";
+        s.style.fontSize = (0.7 + Math.random() * 1.5) + "rem";
+        s.style.animationDuration = (1.2 + Math.random() * 2.2) + "s";
+        s.style.animationDelay = (Math.random() * 0.9) + "s";
+        cutStars.appendChild(s);
+      }
+    }
+    function closeCut() {
+      cut.classList.remove("on", "max");
+      cutOpen = false;
+      if (cutStars) cutStars.innerHTML = "";
+      clearTimeout(cutTimer);
+      if (autoPausedByCut) {
+        autoPausedByCut = false;
+        if (autoOn) {
+          autoTimer = setInterval(function() { tryPick(true); }, getCD());
+          if (!worker) startWorker();
+        }
+      }
+    }
+    function tone(freq, start, dur, type, vol) {
+      const ctx = getAudio();
+      if (!ctx) return;
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = type || "sawtooth";
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, ctx.currentTime + start);
+      g.gain.exponentialRampToValueAtTime(vol || 0.07, ctx.currentTime + start + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + start + dur);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(ctx.currentTime + start);
+      o.stop(ctx.currentTime + start + dur + 0.02);
+    }
+    function fanfare(big) {
+      if (!sfxOn) return;
+      getAudio();
+      tone(196, 0, 0.8, "sine", 0.05);
+      tone(262, 0.05, 0.45, "sawtooth", 0.04);
+      tone(330, 0.18, 0.45, "sawtooth", 0.045);
+      tone(392, 0.32, 0.55, "sawtooth", 0.05);
+      tone(523, 0.55, 0.7, "triangle", 0.06);
+      if (big) {
+        tone(659, 0.85, 0.8, "triangle", 0.06);
+        tone(784, 1.1, 1.0, "sawtooth", 0.05);
+      }
+    }
+    function playCut(n) {
+      cutOpen = true;
+      cutK.textContent = n >= MAX ? "최대 희귀" : (n >= 1000000 ? "별빛 출현" : "전설 출현");
+      cutN.textContent = fmtN(n) + "/1";
+      cutT.textContent = n >= MAX ? "1억/1 등장" : (n >= 10000000 ? "초희귀 컷씬" : (n >= 1000000 ? "100만 이상 · 별 컷씬" : "희귀 컷씬"));
+      cut.classList.toggle("max", n >= MAX || n >= 1000000);
+      cut.classList.add("on");
+      if (cutStars) cutStars.innerHTML = "";
+      if (n >= 1000000 && fxOn) spawnCutStars(n >= MAX ? 40 : n >= 10000000 ? 32 : 24);
+      fanfare(n >= MAX || n >= 1000000);
+      flashScreen();
+      shake();
+      const rect = oddsEl.getBoundingClientRect();
+      burst(rect.left + rect.width / 2, rect.top + rect.height / 2, 22);
+      if (autoOn) {
+        autoPausedByCut = true;
+        clearInterval(autoTimer);
+        stopWorker();
+      }
+      clearTimeout(cutTimer);
+      cutTimer = setTimeout(closeCut, n >= MAX ? 3200 : 2200);
+    }
+    cut.addEventListener("pointerup", function(e) {
+      e.preventDefault();
+      closeCut();
+    });
+    function rain(n, glyph) {
+      if (!fxOn) return;
+      for (let i = 0; i < n; i++) {
+        const d = document.createElement("div");
+        d.className = "bit";
+        d.textContent = glyph;
+        d.style.left = Math.random() * 100 + "vw";
+        d.style.fontSize = (1 + Math.random() * 1.2) + "rem";
+        d.style.animationDuration = (0.65 + Math.random() * 0.7) + "s";
+        bits.appendChild(d);
+        setTimeout(() => d.remove(), 1200);
+      }
+    }
+    function persist() {
+      localStorage.setItem(SAVE, JSON.stringify(save));
+      if (best) localStorage.setItem(KEY, String(best));
+    }
+    function renderEcon() {
+      goldVal.textContent = save.gold;
+      if (goldMainVal) goldMainVal.textContent = fmtN(save.gold);
+      multVal.textContent = "x" + luck;
+      const cd = getCD();
+      const lo = unlockedMinCD();
+      cdVal.textContent = (cd / 1000).toFixed(2) + "초";
+      buyBtn.innerHTML = "확률 2배<br>" + save.cost + "G";
+      buyBtn.disabled = save.gold < save.cost;
+      if (save.speedBuys >= SPEED_MAX) {
+        buySpeedBtn.innerHTML = "속도 MAX<br>0.10초";
+        buySpeedBtn.disabled = true;
+      } else {
+        buySpeedBtn.innerHTML = "속도 업 (" + save.speedBuys + "/" + SPEED_MAX + ")<br>" + save.speedCost + "G";
+        buySpeedBtn.disabled = save.gold < save.speedCost;
+      }
+      const earn = earnAmount();
+      if (buyEarnBtn) {
+        if (save.earnBuys >= EARN_MAX) {
+          buyEarnBtn.innerHTML = "골드 업 MAX (" + earn + "원/회)";
+          buyEarnBtn.disabled = true;
+        } else {
+          buyEarnBtn.innerHTML = "골드 업 " + earn + "→" + (earn + 1) + "원<br>" + save.earnCost + "G";
+          buyEarnBtn.disabled = save.gold < save.earnCost;
+        }
+      }
+      const slider = document.getElementById("cdSlider");
+      const hi = speedHi();
+      if (slider) {
+        slider.min = String(lo);
+        slider.max = String(hi);
+        // range is inverted visually: left=slow(high), right=fast(low) via value mapping
+        slider.value = String(hi + lo - cd);
+      }
+    }
+    function sliderToCd(val) {
+      const lo = unlockedMinCD();
+      const hi = speedHi();
+      const v = Number(val);
+      return hi + lo - v;
+    }
+    function buySpeed() {
+      if (save.speedBuys >= SPEED_MAX) {
+        showToast("이미 최대 속도");
+        return;
+      }
+      if (save.gold < save.speedCost) {
+        showToast("골드 부족");
+        return;
+      }
+      save.gold -= save.speedCost;
+      save.speedBuys += 1;
+      save.speedCost += 3;
+      save.userCd = unlockedMinCD();
+      persist();
+      renderEcon();
+      restartAutoTimers();
+      showToast("쿨타임 " + (getCD() / 1000).toFixed(2) + "초");
+      beep(440, 70, 0.07);
+      setTimeout(function() { beep(660, 100, 0.08); }, 80);
+    }
+    function buyMult() {
+      if (save.gold < save.cost) {
+        showToast("골드 부족");
+        return;
+      }
+      save.gold -= save.cost;
+      save.buys += 1;
+      save.cost += 10;
+      save.devLuck = null;
+      luck = Math.pow(2, save.buys);
+      persist();
+      renderEcon();
+      showToast("확률 x" + luck);
+      beep(523, 80, 0.07);
+      setTimeout(function() { beep(784, 140, 0.08); }, 90);
+    }
+    function buyEarn() {
+      if (save.earnBuys >= EARN_MAX) {
+        showToast("이미 최대 골드");
+        return;
+      }
+      if (save.gold < save.earnCost) {
+        showToast("골드 부족");
+        return;
+      }
+      save.gold -= save.earnCost;
+      save.earnBuys += 1;
+      save.earnCost *= 2;
+      persist();
+      renderEcon();
+      showToast("골드 " + earnAmount() + "원/회");
+      beep(494, 80, 0.07);
+      setTimeout(function() { beep(659, 140, 0.08); }, 90);
+    }
+    function setDevLuck(v) {
+      const val = Math.max(1, Math.floor(Number(v) || 1));
+      luck = val;
+      save.devLuck = val;
+      persist();
+      renderEcon();
+      renderDevPanel();
+      showToast("DEV 배율 x" + val);
+    }
+    function renderDevPanel() {
+      const codeRow = document.getElementById("devCodeRow");
+      const panel = document.getElementById("devPanel");
+      if (codeRow) codeRow.style.display = save.devMode ? "none" : "flex";
+      if (panel) panel.style.display = save.devMode ? "flex" : "none";
+      const speedInput = document.getElementById("devSpeedInput");
+      const luckInput = document.getElementById("devLuckInput");
+      if (speedInput && document.activeElement !== speedInput) speedInput.value = String(getCD());
+      if (luckInput && document.activeElement !== luckInput) luckInput.value = String(luck);
+    }
+    function doReset() {
+      if (!confirm("골드, 배율, BEST를 모두 초기화할까요?")) return;
+      if (autoOn) toggleAuto();
+      if (cutOpen) closeCut();
+      save = { gold: 0, cost: 100, buys: 0, speedBuys: 0, speedCost: 50, userCd: 550, cutAt: 10000, autoUnlocked: false, earnBuys: 0, earnCost: 200, devMode: save.devMode, devLuck: null };
+      luck = 1;
+      best = 0;
+      last = null;
+      lastAt = 0;
+      autoOn = false;
+      localStorage.removeItem(SAVE);
+      localStorage.removeItem(KEY);
+      persist();
+      renderEcon();
+      renderBest();
+      renderAutoBtn();
+      renderDevPanel();
+      var ci = document.getElementById("cutInput");
+      if (ci) ci.value = "10000";
+      oddsEl.className = "odds common";
+      oddsEl.textContent = "?/?";
+      tierEl.textContent = "대기 중";
+      lineEl.textContent = "버튼을 누르면 정확한 확률로 뽑힘";
+      subEl.innerHTML = "나올 확률은 숫자마다 다름";
+      setCool(false);
+      showToast("초기화됨");
+    }
+    function drawN(effLuck) {
+      const L = effLuck != null ? effLuck : luck;
+      const u = Math.random();
+      const hitMax = u <= Math.min(1, L / MAX);
+      if (hitMax) return MAX;
+      const n = Math.floor(L / u);
+      return Math.min(MAX, Math.max(MIN, n));
+    }
+    function setCool(on) {
+      go.disabled = on;
+      go.textContent = on ? (getCD() / 1000).toFixed(2) + "초" : "뽑기";
+    }
+    function tryPick(fromAuto, nOpt) {
+      if (cutOpen) return false;
+      const now = Date.now();
+      const cd = getCD();
+      if (now - lastAt < cd - 5) return false;
+      lastAt = now;
+      setCool(true);
+      clearTimeout(cdTimer);
+      cdTimer = setTimeout(function() { setCool(false); }, cd);
+      pick(fromAuto, nOpt, true);
+      return true;
+    }
+    function renderAutoBtn() {
+      if (!save.autoUnlocked) {
+        autoBtn.classList.remove("on-auto");
+        autoBtn.textContent = "60G";
+        autoBtn.title = "오토 구매 60골드";
+        return;
+      }
+      autoBtn.classList.toggle("on-auto", autoOn);
+      autoBtn.textContent = autoOn ? "auto ON" : "auto";
+      autoBtn.title = "자동";
+    }
+    function buyAuto() {
+      if (save.autoUnlocked) return true;
+      if (save.gold < 60) {
+        showToast("오토 60골드 필요");
+        return false;
+      }
+      save.gold -= 60;
+      save.autoUnlocked = true;
+      persist();
+      renderEcon();
+      renderAutoBtn();
+      showToast("오토 해금!");
+      beep(523, 80, 0.07);
+      setTimeout(function() { beep(784, 120, 0.08); }, 90);
+      return true;
+    }
+    function toggleAuto() {
+      if (!save.autoUnlocked) {
+        if (!buyAuto()) return;
+      }
+      autoOn = !autoOn;
+      renderAutoBtn();
+      clearInterval(autoTimer);
+      stopWorker();
+      if (autoOn) {
+        askNotify();
+        getAudio();
+        if (bgmOn && !bgmNodes) startBgm();
+        tryPick(true);
+        autoTimer = setInterval(function() { tryPick(true); }, getCD());
+        startWorker();
+      }
+    }
+    function pick(fromAuto, nOpt, showUi) {
+      if (showUi === undefined) showUi = true;
+      let luckyRoll = false;
+      let n;
+      if (nOpt != null) {
+        n = nOpt;
+      } else {
+        luckyRoll = Math.random() < LUCKY_ROLL_CHANCE;
+        n = drawN(luckyRoll ? luck * 2 : luck);
+      }
+      const goldenRoll = Math.random() < GOLDEN_ROLL_CHANCE;
+      const pRare = pAtLeast(n);
+      const p = pExact(n);
+      last = { n, p, pRare };
+      const earn = earnAmount() + (goldenRoll ? GOLDEN_ROLL_BONUS : 0);
+      save.gold += earn;
+      persist();
+      renderEcon();
+      const isNewBest = n > best;
+      const isMaxRare = n === MAX;
+      if (isNewBest) {
+        best = n;
+        localStorage.setItem(KEY, String(best));
+      }
+      if (showUi || !fromAuto || n >= 1000) playDrawSfx(n, !!fromAuto);
+      if (n >= ALARM_N) alarmRare(n);
+      if (luckyRoll || goldenRoll) {
+        const msgs = [];
+        if (luckyRoll) msgs.push("럭키 롤! 확률 2배");
+        if (goldenRoll) msgs.push("골든 롤! +" + GOLDEN_ROLL_BONUS + "원");
+        showToast(msgs.join(" · "));
+        if (!fromAuto || showUi) {
+          beep(luckyRoll ? 740 : 587, 90, 0.07);
+        }
+      }
+
+      if (showUi) {
+        oddsEl.className = "odds pop " + cls(n);
+        oddsEl.textContent = fmtN(n) + "/1";
+        oddsEl.style.fontSize = n >= 1000000 ? "clamp(1.6rem, 8vw, 2.6rem)" : "";
+        tierEl.textContent = tierName(n) + " · " + fmtN(n) + " 이상 = " + fmtP(pRare);
+        lineEl.textContent = fmtN(n) + "/1 이상 희귀 확률 = 1/" + fmtN(n);
+        subEl.innerHTML = "딱 이 숫자 확률 " + fmtP(p);
+        if (isNewBest) {
+          renderBest();
+          bestBox.classList.remove("flash");
+          void bestBox.offsetWidth;
+          bestBox.classList.add("flash");
+          subEl.innerHTML += '<div class="newbest">BEST 갱신</div>';
+        }
+        if (n >= (save.cutAt || 10000)) {
+          if (isMaxRare) subEl.innerHTML += '<div class="newbest">최대 희귀 ' + fmtN(MAX) + '/1 등장</div>';
+          playCut(n);
+        } else if (n >= 1000) {
+          flashScreen();
+          shake();
+          const rc = oddsEl.getBoundingClientRect();
+          burst(rc.left + rc.width / 2, rc.top + rc.height / 2, 10);
+        } else if (!fromAuto) {
+          rain(6, "·");
+        }
+      } else if (isNewBest) {
+        renderBest();
+      }
+    }
+    async function share() {
+      const n = last ? last.n : best;
+      const pRare = last ? last.pRare : (best ? pAtLeast(best) : null);
+      if (!n) {
+        showToast("먼저 뽑아줘");
+        return;
+      }
+      const text = "확률 숫자 뽑기\n이번: " + fmtN(n) + "/1 (이 이상 확률 " + fmtP(pRare) + ")\nBEST: " + (best ? fmtN(best) + "/1" : "-");
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: "확률 숫자 뽑기", text: text });
+          showToast("공유함");
+          return;
+        }
+      } catch (e) {
+        if (e && e.name === "AbortError") return;
+      }
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast("복사됨");
+      } catch (e2) {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+        showToast("복사됨");
+      }
+    }
+    function bindPress(el, fn) {
+      const on = function() { el.classList.add("pressed"); };
+      const off = function() { el.classList.remove("pressed"); };
+      el.addEventListener("pointerdown", function(e) { e.preventDefault(); on(); vibrate(12); });
+      el.addEventListener("pointerup", function(e) { e.preventDefault(); off(); fn(); });
+      el.addEventListener("pointercancel", off);
+      el.addEventListener("pointerleave", off);
+    }
+    bindPress(go, function() { vibrate([8, 18, 12]); getAudio(); if (bgmOn && !bgmNodes) startBgm(); tryPick(false); });
+    bindPress(autoBtn, function() { vibrate(10); toggleAuto(); });
+    bindPress(shareBtn, function() { vibrate(10); share(); });
+    bindPress(buyBtn, function() { vibrate(10); buyMult(); });
+    bindPress(buySpeedBtn, function() { vibrate(10); buySpeed(); });
+    bindPress(buyEarnBtn, function() { vibrate(10); buyEarn(); });
+    bindPress(resetBtn, function() { vibrate(10); doReset(); });
+    (function setupSpeedCtrl() {
+      const slider = document.getElementById("cdSlider");
+      const slow = document.getElementById("cdSlow");
+      const fast = document.getElementById("cdFast");
+      if (!slider) return;
+      slider.addEventListener("input", function() {
+        setUserCd(sliderToCd(slider.value));
+      });
+      slow.addEventListener("click", function() {
+        setUserCd(getCD() + 25);
+        showToast("느리게 " + (getCD() / 1000).toFixed(2) + "초");
+      });
+      fast.addEventListener("click", function() {
+        setUserCd(getCD() - 25);
+        showToast("빠르게 " + (getCD() / 1000).toFixed(2) + "초");
+      });
+    })();
+    (function setupCutSet() {
+      const input = document.getElementById("cutInput");
+      const apply = document.getElementById("cutApply");
+      if (!input || !apply) return;
+      input.value = String(save.cutAt || 10000);
+      function applyCut() {
+        var v = parseInt(input.value, 10);
+        if (!isFinite(v)) v = 10000;
+        v = Math.max(MIN, Math.min(MAX, v));
+        save.cutAt = v;
+        input.value = String(v);
+        persist();
+        showToast("컷씬 " + fmtN(v) + "/1 부터");
+        beep(520, 70, 0.06);
+      }
+      apply.addEventListener("click", applyCut);
+      input.addEventListener("change", applyCut);
+      input.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") applyCut();
+      });
+    })();
+    (function setupDevCode() {
+      const input = document.getElementById("devCodeInput");
+      const apply = document.getElementById("devCodeApply");
+      if (!input || !apply) return;
+      function tryCode() {
+        const v = (input.value || "").trim().toUpperCase();
+        if (!v) return;
+        if (v === DEV_CODE) {
+          save.devMode = true;
+          persist();
+          input.value = "";
+          renderDevPanel();
+          renderEcon();
+          showToast("개발자 모드 ON");
+          beep(880, 90, 0.08);
+          setTimeout(function() { beep(1175, 140, 0.08); }, 90);
+        } else {
+          showToast("코드 불일치");
+          input.value = "";
+        }
+      }
+      apply.addEventListener("click", tryCode);
+      input.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") tryCode();
+      });
+    })();
+    (function setupDevPanel() {
+      const speedInput = document.getElementById("devSpeedInput");
+      const speedApply = document.getElementById("devSpeedApply");
+      const luckInput = document.getElementById("devLuckInput");
+      const luckApply = document.getElementById("devLuckApply");
+      const offBtn = document.getElementById("devOff");
+      if (speedApply && speedInput) {
+        speedApply.addEventListener("click", function() {
+          const v = parseInt(speedInput.value, 10);
+          if (!isFinite(v) || v < 1) {
+            showToast("숫자를 입력하세요");
+            return;
+          }
+          setUserCd(v);
+          renderDevPanel();
+          showToast("DEV 속도 " + (getCD() / 1000).toFixed(3) + "초");
+          beep(440, 70, 0.06);
+        });
+      }
+      if (luckApply && luckInput) {
+        luckApply.addEventListener("click", function() {
+          const v = parseFloat(luckInput.value);
+          if (!isFinite(v) || v < 1) {
+            showToast("숫자를 입력하세요");
+            return;
+          }
+          setDevLuck(v);
+        });
+      }
+      if (offBtn) {
+        offBtn.addEventListener("click", function() {
+          save.devMode = false;
+          luck = Math.pow(2, save.buys || 0);
+          persist();
+          renderDevPanel();
+          renderEcon();
+          restartAutoTimers();
+          showToast("개발자 모드 OFF");
+        });
+      }
+    })();
+    bindPress(sfxBtn, function() { vibrate(8); toggleSfx(); });
+    bindPress(bgmBtn, function() { vibrate(8); toggleBgm(); });
+    bindPress(fxBtn, function() { vibrate(8); toggleFx(); });
+    bindPress(shakeBtn, function() { vibrate(8); toggleShake(); });
+    const menuBtn = document.getElementById("menuBtn");
+    const menuBg = document.getElementById("menuBg");
+    const menuPanel = document.getElementById("menuPanel");
+    const menuClose = document.getElementById("menuClose");
+    function openMenu() {
+      if (!menuBg || !menuPanel) return;
+      menuBg.classList.add("on");
+      menuPanel.classList.add("on");
+      try {
+        renderEcon();
+        renderAudioBtns();
+        renderAutoBtn();
+        renderDevPanel();
+      } catch (e) {}
+    }
+    function closeMenu() {
+      if (menuBg) menuBg.classList.remove("on");
+      if (menuPanel) menuPanel.classList.remove("on");
+    }
+    if (menuBtn) {
+      menuBtn.style.zIndex = "100";
+      menuBtn.addEventListener("click", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        vibrate(8);
+        openMenu();
+      }, { passive: false });
+    }
+    if (menuClose) {
+      menuClose.addEventListener("click", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeMenu();
+      });
+    }
+    if (menuBg) {
+      menuBg.addEventListener("click", function(e) {
+        e.preventDefault();
+        closeMenu();
+      });
+    }
+    // panel clicks should not close
+    if (menuPanel) {
+      menuPanel.addEventListener("click", function(e) { e.stopPropagation(); });
+    }
+    (function setupSwipeMenu() {
+      const EDGE_PX = 28;
+      const THRESH = 45;
+      let startX = null, startY = null, startEdge = false, ignoreSwipe = false, activeId = null;
+      function onDown(e) {
+        if (e.pointerType === "mouse" && e.button !== 0) return;
+        startX = e.clientX;
+        startY = e.clientY;
+        activeId = e.pointerId;
+        startEdge = (window.innerWidth - e.clientX) <= EDGE_PX;
+        ignoreSwipe = !!(e.target && e.target.closest && e.target.closest("#cdSlider"));
+      }
+      function onUp(e) {
+        if (startX == null || e.pointerId !== activeId) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        const sEdge = startEdge, ig = ignoreSwipe;
+        startX = null; startY = null; startEdge = false; ignoreSwipe = false; activeId = null;
+        if (ig || Math.abs(dy) > 70 || !menuPanel) return;
+        const isOpen = menuPanel.classList.contains("on");
+        if (!isOpen && sEdge && dx < -THRESH) {
+          vibrate(8);
+          openMenu();
+        } else if (isOpen && dx > THRESH) {
+          vibrate(8);
+          closeMenu();
+        }
+      }
+      document.addEventListener("pointerdown", onDown, { passive: true });
+      document.addEventListener("pointerup", onUp, { passive: true });
+      document.addEventListener("pointercancel", function() {
+        startX = null; startY = null; startEdge = false; ignoreSwipe = false; activeId = null;
+      }, { passive: true });
+    })();
+    renderEcon();
+    renderAudioBtns();
+    renderAutoBtn();
+    renderDevPanel();
+    document.addEventListener("visibilitychange", function() {
+      if (document.visibilityState === "visible") {
+        catchUp();
+        renderBest();
+        if (last) {
+          oddsEl.textContent = fmtN(last.n) + "/1";
+          oddsEl.className = "odds " + cls(last.n);
+        }
+      }
+    });
+    window.addEventListener("pagehide", function() {
+      if (best) localStorage.setItem(KEY, String(best));
+    });
+    renderBest();
+  </script>
+</body>
+</html>
