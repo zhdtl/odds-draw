@@ -134,18 +134,77 @@
       z-index: 90;
       display: flex;
       align-items: center;
-      gap: 4px;
-      height: 40px;
-      padding: 0 14px;
+      gap: 6px;
+      height: 36px;
+      padding: 0 12px;
       border-radius: 999px;
       background: rgba(40, 55, 80, .92);
       box-shadow: 0 3px 10px rgba(0,0,0,.35);
-      font-size: .85rem;
+      font-size: .8rem;
       font-weight: 800;
       color: #ffd56a;
       white-space: nowrap;
+      letter-spacing: 0.02em;
     }
-    .gold-main .ic { font-size: .95rem; }
+    .gold-main .ic { font-size: .9rem; }
+    .title-screen {
+      position: fixed; inset: 0; z-index: 300;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: radial-gradient(ellipse at 50% 30%, #2a1a4a 0%, #070b14 70%);
+      padding: 24px;
+    }
+    .title-screen.hide { display: none; }
+    body.on-title .menu-fab,
+    body.on-title .gold-main { visibility: hidden; pointer-events: none; }
+    .title-screen h1 {
+      font-size: clamp(1.8rem, 7vw, 2.6rem);
+      margin: 0 0 8px;
+      background: linear-gradient(90deg, #ffd56a, #5ad0ff);
+      -webkit-background-clip: text; background-clip: text;
+      color: transparent; -webkit-text-fill-color: transparent;
+    }
+    .title-sub { opacity: .65; margin-bottom: 28px; font-size: .9rem; }
+    .title-start {
+      width: min(80vw, 280px); height: 64px;
+      border-radius: 18px; border: 0;
+      font-size: 1.25rem; font-weight: 900;
+      color: #081018;
+      background: linear-gradient(180deg, #b8f3ff, #5ad0ff);
+      box-shadow: 0 7px 0 #1a6d8a, 0 14px 24px rgba(0,0,0,.35);
+    }
+    .title-ver {
+      position: absolute;
+      right: 14px; bottom: calc(env(safe-area-inset-bottom) + 12px);
+      font-size: .72rem; opacity: .45;
+    }
+    .menu-tabs {
+      display: flex; gap: 6px; padding: 0 14px 8px;
+    }
+    .menu-tabs button {
+      flex: 1; height: 36px; border-radius: 10px;
+      font-size: .8rem; color: #c8d4e8;
+      background: rgba(255,255,255,.06);
+    }
+    .menu-tabs button.on {
+      background: linear-gradient(180deg, #5ad0ff, #2a8fc4);
+      color: #081018;
+    }
+    .menu-sec { display: none; flex-direction: column; gap: 10px; }
+    .menu-sec.on { display: flex; }
+    .world-row {
+      display: flex; gap: 6px;
+    }
+    .world-row button {
+      flex: 1; height: 40px; border-radius: 10px;
+      font-size: .78rem; color: #fff;
+      background: rgba(40,55,80,.9);
+    }
+    .world-row button.on {
+      background: linear-gradient(180deg, #ffd56a, #e08a2c);
+      color: #1a1208;
+    }
+    .world-row button:disabled { opacity: .35; }
     .fab.off { opacity: .45; filter: grayscale(.5); }
     .fab.on-auto { background: linear-gradient(180deg, #ffd56a, #e08a2c); color: #1a1208; }
     .fab.reset { background: rgba(120, 50, 50, .9); }
@@ -438,79 +497,111 @@
     </div>
   </div>
 
+  <div class="title-screen" id="titleScreen">
+    <h1>확률 숫자 뽑기</h1>
+    <p class="title-sub">2/1 ~ 최대 · 운과 성장</p>
+    <button type="button" class="title-start" id="titleStart">시작</button>
+    <div class="title-ver">1.1.0ver</div>
+  </div>
+
   <button type="button" class="fab menu-fab" id="menuBtn" title="메뉴">메뉴</button>
-  <div class="gold-main" id="goldMain"><span class="ic">🪙</span><span id="goldMainVal">0</span></div>
+  <div class="gold-main" id="goldMain">( <span class="ic">🪙</span> <span id="goldMainVal">0</span> )</div>
 
   <div class="menu-bg" id="menuBg"></div>
   <div class="menu-panel" id="menuPanel">
     <div class="menu-head">
-      <strong>메뉴</strong>
+      <strong id="menuTitle">메뉴</strong>
       <button type="button" class="fab" id="menuClose">닫기</button>
     </div>
+    <div class="menu-tabs">
+      <button type="button" class="on" data-tab="shop">상점</button>
+      <button type="button" data-tab="settings">설정</button>
+      <button type="button" data-tab="menu">메뉴</button>
+    </div>
     <div class="menu-scroll">
-      <div class="econ">
-        <div class="card">
-          <div class="k">GOLD</div>
-          <div class="v" id="goldVal">0</div>
+      <div class="menu-sec on" id="tabShop">
+        <div class="econ">
+          <div class="card">
+            <div class="k">GOLD</div>
+            <div class="v" id="goldVal">0</div>
+          </div>
+          <div class="card">
+            <div class="k">확률 배율</div>
+            <div class="v" id="multVal">x1</div>
+          </div>
+          <div class="card">
+            <div class="k">쿨타임</div>
+            <div class="v" id="cdVal">0.55초</div>
+          </div>
         </div>
-        <div class="card">
-          <div class="k">확률 배율</div>
-          <div class="v" id="multVal">x1</div>
+        <div class="econ-row">
+          <button id="buy" type="button">확률 2배<br>100G</button>
+          <button id="buySpeed" type="button">속도 업<br>50G</button>
         </div>
-        <div class="card">
-          <div class="k">쿨타임</div>
-          <div class="v" id="cdVal">0.55초</div>
+        <div class="econ-row">
+          <button id="buyEarn" type="button">골드 업 1→2원<br>200G</button>
         </div>
+        <div class="econ-row">
+          <button type="button" class="fab" id="auto" title="자동" style="flex:1;height:44px;border-radius:12px;">auto</button>
+        </div>
+        <p class="menu-hint">오토 해금 60G · 속도 업 최대 10회</p>
       </div>
-      <div class="econ-row">
-        <button id="buy" type="button">확률 2배<br>100G</button>
-        <button id="buySpeed" type="button">속도 업<br>50G</button>
-      </div>
-      <div class="econ-row">
-        <button id="buyEarn" type="button">골드 업 1→2원<br>200G</button>
-      </div>
-      <div class="econ-row">
-        <button type="button" class="fab" id="auto" title="자동" style="flex:1;height:44px;border-radius:12px;">auto</button>
-        <button type="button" class="fab" id="share" title="공유" style="flex:1;height:44px;border-radius:12px;">공유</button>
-        <button type="button" class="fab reset" id="reset" title="초기화" style="flex:1;height:44px;border-radius:12px;">초기화</button>
-      </div>
-      <div class="speed-ctrl">
-        <button type="button" id="cdSlow" class="cd-btn">느림</button>
-        <input type="range" id="cdSlider" min="100" max="550" step="5" value="550" />
-        <button type="button" id="cdFast" class="cd-btn">빠름</button>
-      </div>
-      <div class="cut-set">
-        <span class="cut-label">컷씬</span>
-        <input type="number" id="cutInput" min="2" max="1000000000000000000" step="1" value="10000" />
-        <span class="cut-label">/1 부터</span>
-        <button type="button" id="cutApply" class="cd-btn">적용</button>
-      </div>
-      <div class="cut-set" id="devCodeRow">
-        <span class="cut-label">코드</span>
-        <input type="text" id="devCodeInput" class="dev-input" maxlength="16" placeholder="코드 입력" autocomplete="off" autocapitalize="characters" />
-        <button type="button" id="devCodeApply" class="cd-btn">확인</button>
-      </div>
-      <div class="dev-panel" id="devPanel" style="display:none;">
-        <p class="menu-hint" style="opacity:.9;color:#7ad7ff;margin:0;">🛠 개발자 모드 ON</p>
-        <div class="cut-set">
-          <span class="cut-label">속도(ms)</span>
-          <input type="number" id="devSpeedInput" class="dev-input" min="1" step="1" />
-          <button type="button" id="devSpeedApply" class="cd-btn">적용</button>
+      <div class="menu-sec" id="tabSettings">
+        <div class="speed-ctrl">
+          <button type="button" id="cdSlow" class="cd-btn">느림</button>
+          <input type="range" id="cdSlider" min="100" max="550" step="5" value="550" />
+          <button type="button" id="cdFast" class="cd-btn">빠름</button>
         </div>
         <div class="cut-set">
-          <span class="cut-label">배율(x)</span>
-          <input type="number" id="devLuckInput" class="dev-input" min="1" step="1" />
-          <button type="button" id="devLuckApply" class="cd-btn">적용</button>
+          <span class="cut-label">컷씬</span>
+          <input type="number" id="cutInput" min="2" max="1000000000000000000" step="1" value="10000" />
+          <span class="cut-label">/1 부터</span>
+          <button type="button" id="cutApply" class="cd-btn">적용</button>
         </div>
-        <button type="button" class="fab reset" id="devOff" style="width:100%;height:36px;border-radius:10px;">개발자 모드 끄기</button>
+        <div class="toggle-row">
+          <button type="button" class="fab" id="sfxBtn" title="효과음">🔊</button>
+          <button type="button" class="fab" id="bgmBtn" title="배경음악">🎵</button>
+          <button type="button" class="fab" id="fxBtn" title="이펙트">✨</button>
+          <button type="button" class="fab" id="shakeBtn" title="흔들림">📳</button>
+        </div>
+        <p class="menu-hint">🔊효과음 · 🎵BGM · ✨이펙트 · 📳흔들림</p>
       </div>
-      <div class="toggle-row">
-        <button type="button" class="fab" id="sfxBtn" title="효과음">🔊</button>
-        <button type="button" class="fab" id="bgmBtn" title="배경음악">🎵</button>
-        <button type="button" class="fab" id="fxBtn" title="이펙트">✨</button>
-        <button type="button" class="fab" id="shakeBtn" title="흔들림">📳</button>
+      <div class="menu-sec" id="tabMenu">
+        <div class="world-row" id="worldRow">
+          <button type="button" data-world="1" class="on">월드1</button>
+          <button type="button" data-world="2" disabled>월드2</button>
+          <button type="button" data-world="3" disabled>월드3</button>
+        </div>
+        <p class="menu-hint" id="worldHint">월드1 최대 1억 · 클리어 시 다음 월드 해금</p>
+        <div class="econ-row">
+          <button type="button" class="fab" id="share" title="공유" style="flex:1;height:44px;border-radius:12px;">공유</button>
+          <button type="button" class="fab" id="goTitle" title="타이틀" style="flex:1;height:44px;border-radius:12px;">타이틀</button>
+        </div>
+        <div class="econ-row">
+          <button type="button" class="fab" id="rebirthBtn" style="flex:1;height:44px;border-radius:12px;background:linear-gradient(180deg,#c9a0ff,#7a3aa0);">환생 1000G</button>
+          <button type="button" class="fab reset" id="reset" title="초기화" style="flex:1;height:44px;border-radius:12px;">초기화</button>
+        </div>
+        <div class="cut-set" id="devCodeRow">
+          <span class="cut-label">쿠폰</span>
+          <input type="text" id="devCodeInput" class="dev-input" maxlength="24" placeholder="쿠폰/코드" autocomplete="off" autocapitalize="characters" />
+          <button type="button" id="devCodeApply" class="cd-btn">확인</button>
+        </div>
+        <div class="dev-panel" id="devPanel" style="display:none;">
+          <p class="menu-hint" style="opacity:.9;color:#7ad7ff;margin:0;">🛠 개발자 모드 ON</p>
+          <div class="cut-set">
+            <span class="cut-label">속도(ms)</span>
+            <input type="number" id="devSpeedInput" class="dev-input" min="1" step="1" />
+            <button type="button" id="devSpeedApply" class="cd-btn">적용</button>
+          </div>
+          <div class="cut-set">
+            <span class="cut-label">배율(x)</span>
+            <input type="number" id="devLuckInput" class="dev-input" min="1" step="1" />
+            <button type="button" id="devLuckApply" class="cd-btn">적용</button>
+          </div>
+          <button type="button" class="fab reset" id="devOff" style="width:100%;height:36px;border-radius:10px;">개발자 모드 끄기</button>
+        </div>
+        <p class="menu-hint">환생: 재화 초기화 · 월드 진행 유지 · 1000G</p>
       </div>
-      <p class="menu-hint">🔊효과음 · 🎵BGM · ✨이펙트 · 📳흔들림</p>
     </div>
   </div>
 
@@ -538,9 +629,16 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    const MIN = 2, MAX = 1000000000000000000;
+    const MIN = 2;
+    const WORLDS = {
+      1: { max: 100000000, name: "월드1", label: "1억" },
+      2: { max: 1000000000000, name: "월드2", label: "1조" },
+      3: { max: 1000000000000000000, name: "월드3", label: "100경" }
+    };
+    let MAX = WORLDS[1].max;
     const KEY = "odds-draw-best-v2";
-    const SAVE = "odds-draw-save-v1";
+    const SAVE = "odds-draw-save-v2";
+    const VERSION = "1.1.0";
 
     const oddsEl = document.getElementById("odds");
     const tierEl = document.getElementById("tier");
@@ -587,7 +685,11 @@
     const DEV_CODE = "EA333";
     const DEV_CD_MIN = 1;
     const DEV_CD_MAX = 600000;
-    let save = { gold: 0, cost: 100, buys: 0, speedBuys: 0, speedCost: 50, userCd: 550, cutAt: 10000, autoUnlocked: false, earnBuys: 0, earnCost: 200, devMode: false, devLuck: null };
+    let save = {
+      gold: 0, cost: 100, buys: 0, speedBuys: 0, speedCost: 50, userCd: 550, cutAt: 10000,
+      autoUnlocked: false, earnBuys: 0, earnCost: 200, devMode: false, devLuck: null,
+      world: 1, unlockedWorld: 1, rebirths: 0, usedCodes: {}, buffs: {}, bests: { 1: 0, 2: 0, 3: 0 }
+    };
     try { save = Object.assign(save, JSON.parse(localStorage.getItem(SAVE) || "{}")); } catch (e) {}
     if (save.speedBuys == null) save.speedBuys = 0;
     if (save.speedCost == null) save.speedCost = 50 + save.speedBuys * 3;
@@ -596,13 +698,125 @@
     if (save.earnBuys == null) save.earnBuys = 0;
     if (save.earnCost == null) save.earnCost = 200 * Math.pow(2, save.earnBuys);
     if (!save.devMode) save.devMode = false;
-    if (save.devLuck === undefined) save.devLuck = null;
+        if (save.devLuck === undefined) save.devLuck = null;
     if (!save.autoUnlocked) save.autoUnlocked = false;
+    if (!save.world) save.world = 1;
+    if (!save.unlockedWorld) save.unlockedWorld = 1;
+    if (!save.rebirths) save.rebirths = 0;
+    if (!save.usedCodes) save.usedCodes = {};
+    if (!save.buffs) save.buffs = {};
+    if (!save.bests) save.bests = { 1: 0, 2: 0, 3: 0 };
+    MAX = (WORLDS[save.world] || WORLDS[1]).max;
     save.cutAt = Math.max(MIN, Math.min(MAX, Number(save.cutAt) || 10000));
     let last = null;
-    let best = Number(localStorage.getItem(KEY) || 0);
+    let best = Number(save.bests[save.world] || localStorage.getItem(KEY) || 0);
     let luck = Math.pow(2, save.buys || 0);
     if (save.devMode && save.devLuck != null) luck = save.devLuck;
+    const COUPONS = {
+      "EA333": { once: false, apply: function() { save.devMode = true; showToast("개발자 모드 ON"); } },
+      "LETS GO!": { once: true, apply: function() { addBuff("earnBonus", 1, 15 * 60 * 1000); showToast("벌리는 돈 +1 · 15분"); } },
+      "LET'S GO!": { once: true, apply: function() { addBuff("earnBonus", 1, 15 * 60 * 1000); showToast("벌리는 돈 +1 · 15분"); } },
+      "SPEED": { once: true, apply: function() { addBuff("speedBoost", 20, 15 * 60 * 1000); showToast("속도 +0.02 · 15분"); } },
+      "LUCK!": { once: true, apply: function() { addBuff("luckMul", 2, 30 * 60 * 1000); showToast("행운 2배 · 30분"); } },
+      "LOADING...": { once: true, apply: function() { save.gold += 50000; showToast("+5만 골드"); } },
+      "LOL": { once: true, apply: function() { showToast("ㅋㅋ"); } },
+      "DIAMONDS!": { once: true, apply: function() { save.gold += 15000; showToast("보석 대신 +1.5만 골드"); } },
+      "BRO": { once: true, apply: function() { addBuff("earnBonus", 2, 15 * 60 * 1000); showToast("벌리는 돈 +2 · 15분"); } },
+      "TACO TACO!": { once: true, apply: function() { addBuff("luckyBonus", 0.077, 15 * 60 * 1000); showToast("럭키롤 +7.7% · 15분"); } },
+      "COIN BREAKER": { once: true, apply: function() { addBuff("goldenBonus", 0.20, 15 * 60 * 1000); showToast("골든롤 +20% · 15분"); } },
+      "100000000": { once: true, apply: function() { save.gold += 50000; showToast("+5만 코인"); } },
+      "SETTING": { once: true, apply: function() { addBuff("speedBoost", 10, 2 * 60 * 60 * 1000); showToast("속도 버프 · 2시간"); } }
+    };
+    function addBuff(key, val, ms) {
+      const until = Date.now() + ms;
+      const prev = save.buffs[key];
+      if (prev && prev.until > Date.now()) {
+        save.buffs[key] = { val: (prev.val || 0) + val, until: Math.max(prev.until, until) };
+      } else {
+        save.buffs[key] = { val: val, until: until };
+      }
+      persist();
+    }
+    function getBuff(key) {
+      const b = save.buffs[key];
+      if (!b || b.until < Date.now()) return 0;
+      return b.val || 0;
+    }
+    function getLuck() {
+      let L = luck;
+      const m = getBuff("luckMul");
+      if (m) L *= m;
+      return L;
+    }
+    function setWorld(w) {
+      w = Number(w);
+      if (!WORLDS[w] || w > save.unlockedWorld) {
+        showToast("아직 잠김");
+        return;
+      }
+      if (last && best) save.bests[save.world] = Math.max(save.bests[save.world] || 0, best);
+      save.world = w;
+      MAX = WORLDS[w].max;
+      best = Number(save.bests[w] || 0);
+      persist();
+      renderWorlds();
+      renderBest();
+      renderEcon();
+      const sub = document.querySelector(".sub");
+      if (sub) sub.textContent = "월드" + w + " · 최대 " + WORLDS[w].label + "/1";
+      showToast(WORLDS[w].name + " 입장");
+    }
+    function renderWorlds() {
+      const row = document.getElementById("worldRow");
+      if (!row) return;
+      row.querySelectorAll("button").forEach(function(btn) {
+        const w = Number(btn.getAttribute("data-world"));
+        btn.disabled = w > save.unlockedWorld;
+        btn.classList.toggle("on", w === save.world);
+      });
+      const hint = document.getElementById("worldHint");
+      if (hint) {
+        const w = WORLDS[save.world];
+        hint.textContent = w.name + " 최대 " + w.label + " · 해금 " + save.unlockedWorld + "/3 · 환생 " + save.rebirths + "회";
+      }
+    }
+    function checkWorldClear(n) {
+      if (n >= MAX && save.world === save.unlockedWorld && save.unlockedWorld < 3) {
+        save.unlockedWorld += 1;
+        persist();
+        renderWorlds();
+        showToast("월드 " + save.unlockedWorld + " 해금!");
+      }
+      if (n >= MAX && save.world === 3) {
+        showToast("엔딩 · 월드3 최대 달성!");
+      }
+    }
+    function doRebirth() {
+      if (save.gold < 1000) {
+        showToast("환생 1000골드 필요");
+        return;
+      }
+      if (!confirm("환생할까요? 골드를 포함한 재화가 초기화되고 월드는 유지됩니다.")) return;
+      if (autoOn) toggleAuto();
+      save.gold = 0;
+      save.cost = 100;
+      save.buys = 0;
+      save.speedBuys = 0;
+      save.speedCost = 50;
+      save.userCd = 550;
+      save.autoUnlocked = false;
+      save.earnBuys = 0;
+      save.earnCost = 200;
+      save.devLuck = null;
+      save.buffs = {};
+      save.rebirths += 1;
+      luck = 1;
+      persist();
+      renderEcon();
+      renderAutoBtn();
+      renderWorlds();
+      showToast("환생 완료 · +" + save.rebirths + "회");
+    }
     function speedHi() { return save.devMode ? DEV_CD_MAX : CD_BASE; }
     function unlockedMinCD() {
       if (save.devMode) return DEV_CD_MIN;
@@ -612,7 +826,8 @@
       const lo = unlockedMinCD();
       const hi = speedHi();
       save.userCd = Math.max(lo, Math.min(hi, save.userCd || CD_BASE));
-      return save.userCd;
+      const boost = getBuff("speedBoost") || 0;
+      return Math.max(lo, save.userCd - boost);
     }
     function setUserCd(ms) {
       const lo = unlockedMinCD();
@@ -645,7 +860,7 @@
     let bgmTimer = null;
 
     function pAtLeast(n) { return Math.min(1, luck / n); }
-    function earnAmount() { return 1 + (save.earnBuys || 0); }
+    function earnAmount() { return 1 + (save.earnBuys || 0) + getBuff("earnBonus"); }
     function pExact(n) {
       if (n === MAX) return 1 / MAX;
       if (n === MIN) return 1 - 1 / (MIN + 1);
@@ -1128,22 +1343,30 @@
       if (luckInput && document.activeElement !== luckInput) luckInput.value = String(luck);
     }
     function doReset() {
-      if (!confirm("골드, 배율, BEST를 모두 초기화할까요?")) return;
+      if (!confirm("골드, 배율, BEST를 모두 초기화할까요? (월드 진행은 유지)")) return;
       if (autoOn) toggleAuto();
       if (cutOpen) closeCut();
-      save = { gold: 0, cost: 100, buys: 0, speedBuys: 0, speedCost: 50, userCd: 550, cutAt: 10000, autoUnlocked: false, earnBuys: 0, earnCost: 200, devMode: save.devMode, devLuck: null };
+      const keepWorld = save.unlockedWorld;
+      const keepWorldCur = save.world;
+      const keepReb = save.rebirths;
+      const keepDev = save.devMode;
+      const keepBests = save.bests;
+      save = {
+        gold: 0, cost: 100, buys: 0, speedBuys: 0, speedCost: 50, userCd: 550, cutAt: 10000,
+        autoUnlocked: false, earnBuys: 0, earnCost: 200, devMode: keepDev, devLuck: null,
+        world: keepWorldCur, unlockedWorld: keepWorld, rebirths: keepReb, usedCodes: {}, buffs: {}, bests: keepBests || { 1: 0, 2: 0, 3: 0 }
+      };
       luck = 1;
-      best = 0;
+      best = Number(save.bests[save.world] || 0);
       last = null;
       lastAt = 0;
       autoOn = false;
-      localStorage.removeItem(SAVE);
-      localStorage.removeItem(KEY);
       persist();
       renderEcon();
       renderBest();
       renderAutoBtn();
       renderDevPanel();
+      renderWorlds();
       var ci = document.getElementById("cutInput");
       if (ci) ci.value = "10000";
       oddsEl.className = "odds common";
@@ -1175,9 +1398,10 @@
       setCool(true);
       clearTimeout(cdTimer);
       cdTimer = setTimeout(function() { setCool(false); }, cd);
-      pick(fromAuto, nOpt, true);
+            pick(fromAuto, nOpt, true);
       return true;
     }
+
     function renderAutoBtn() {
       if (!save.autoUnlocked) {
         autoBtn.classList.remove("on-auto");
@@ -1189,6 +1413,7 @@
       autoBtn.textContent = autoOn ? "auto ON" : "auto";
       autoBtn.title = "자동";
     }
+
     function buyAuto() {
       if (save.autoUnlocked) return true;
       if (save.gold < 60) {
@@ -1205,6 +1430,7 @@
       setTimeout(function() { beep(784, 120, 0.08); }, 90);
       return true;
     }
+
     function toggleAuto() {
       if (!save.autoUnlocked) {
         if (!buyAuto()) return;
@@ -1213,46 +1439,82 @@
       renderAutoBtn();
       clearInterval(autoTimer);
       stopWorker();
+
       if (autoOn) {
         askNotify();
         getAudio();
         if (bgmOn && !bgmNodes) startBgm();
         tryPick(true);
-        autoTimer = setInterval(function() { tryPick(true); }, getCD());
+        autoTimer = setInterval(function() {
+          tryPick(true);
+        }, getCD());
         startWorker();
       }
     }
+
     function pick(fromAuto, nOpt, showUi) {
       if (showUi === undefined) showUi = true;
+
       let luckyRoll = false;
       let n;
+
       if (nOpt != null) {
         n = nOpt;
       } else {
-        luckyRoll = Math.random() < LUCKY_ROLL_CHANCE;
-        n = drawN(luckyRoll ? luck * 2 : luck);
+        const luckyP = LUCKY_ROLL_CHANCE + getBuff("luckyBonus");
+        luckyRoll = Math.random() < luckyP;
+        n = drawN(luckyRoll ? getLuck() * 2 : getLuck());
       }
-      const goldenRoll = Math.random() < GOLDEN_ROLL_CHANCE;
+
+      const goldenRoll = Math.random() <
+        (GOLDEN_ROLL_CHANCE + getBuff("goldenBonus"));
+
       const pRare = pAtLeast(n);
       const p = pExact(n);
+
       last = { n, p, pRare };
-      const earn = earnAmount() + (goldenRoll ? GOLDEN_ROLL_BONUS : 0);
+
+      const earn =
+        earnAmount() +
+        (goldenRoll ? GOLDEN_ROLL_BONUS : 0);
+
       save.gold += earn;
       persist();
       renderEcon();
+
       const isNewBest = n > best;
       const isMaxRare = n === MAX;
+
       if (isNewBest) {
         best = n;
+        save.bests[save.world] = best;
         localStorage.setItem(KEY, String(best));
+        persist();
       }
-      if (showUi || !fromAuto || n >= 1000) playDrawSfx(n, !!fromAuto);
-      if (n >= ALARM_N) alarmRare(n);
+
+      checkWorldClear(n);
+
+      if (showUi || !fromAuto || n >= 1000) {
+        playDrawSfx(n, !!fromAuto);
+      }
+
+      if (n >= ALARM_N) {
+        alarmRare(n);
+      }
+
       if (luckyRoll || goldenRoll) {
         const msgs = [];
-        if (luckyRoll) msgs.push("럭키 롤! 확률 2배");
-        if (goldenRoll) msgs.push("골든 롤! +" + GOLDEN_ROLL_BONUS + "원");
+
+        if (luckyRoll) {
+          msgs.push("럭키 롤! 확률 2배");
+        }
+
+        if (goldenRoll) {
+          msgs.push("골든 롤! +" + GOLDEN_ROLL_BONUS + "원");
+        }
+
         showToast(msgs.join(" · "));
+
         if (!fromAuto || showUi) {
           beep(luckyRoll ? 740 : 587, 90, 0.07);
         }
@@ -1261,282 +1523,827 @@
       if (showUi) {
         oddsEl.className = "odds pop " + cls(n);
         oddsEl.textContent = fmtN(n) + "/1";
-        oddsEl.style.fontSize = n >= 1000000 ? "clamp(1.6rem, 8vw, 2.6rem)" : "";
-        tierEl.textContent = tierName(n) + " · " + fmtN(n) + " 이상 = " + fmtP(pRare);
-        lineEl.textContent = fmtN(n) + "/1 이상 희귀 확률 = 1/" + fmtN(n);
-        subEl.innerHTML = "딱 이 숫자 확률 " + fmtP(p);
+
+        oddsEl.style.fontSize =
+          n >= 1000000
+            ? "clamp(1.6rem, 8vw, 2.6rem)"
+            : "";
+
+        tierEl.textContent =
+          tierName(n) +
+          " · " +
+          fmtN(n) +
+          " 이상 = " +
+          fmtP(pRare);
+
+        lineEl.textContent =
+          fmtN(n) +
+          "/1 이상 희귀 확률 = 1/" +
+          fmtN(n);
+
+        subEl.innerHTML =
+          "딱 이 숫자 확률 " +
+          fmtP(p);
+
         if (isNewBest) {
           renderBest();
+
           bestBox.classList.remove("flash");
           void bestBox.offsetWidth;
           bestBox.classList.add("flash");
-          subEl.innerHTML += '<div class="newbest">BEST 갱신</div>';
+
+          subEl.innerHTML +=
+            '<div class="newbest">BEST 갱신</div>';
         }
+
         if (n >= (save.cutAt || 10000)) {
-          if (isMaxRare) subEl.innerHTML += '<div class="newbest">최대 희귀 ' + fmtN(MAX) + '/1 등장</div>';
+          if (isMaxRare) {
+            subEl.innerHTML +=
+              '<div class="newbest">최대 희귀 ' +
+              fmtN(MAX) +
+              '/1 등장</div>';
+          }
+
           playCut(n);
+
         } else if (n >= 1000) {
           flashScreen();
           shake();
+
           const rc = oddsEl.getBoundingClientRect();
-          burst(rc.left + rc.width / 2, rc.top + rc.height / 2, 10);
+
+          burst(
+            rc.left + rc.width / 2,
+            rc.top + rc.height / 2,
+            10
+          );
+
         } else if (!fromAuto) {
           rain(6, "·");
         }
+
       } else if (isNewBest) {
         renderBest();
       }
     }
+
     async function share() {
       const n = last ? last.n : best;
-      const pRare = last ? last.pRare : (best ? pAtLeast(best) : null);
+
+      const pRare =
+        last
+          ? last.pRare
+          : (best ? pAtLeast(best) : null);
+
       if (!n) {
         showToast("먼저 뽑아줘");
         return;
       }
-      const text = "확률 숫자 뽑기\n이번: " + fmtN(n) + "/1 (이 이상 확률 " + fmtP(pRare) + ")\nBEST: " + (best ? fmtN(best) + "/1" : "-");
+
+      const text =
+        "확률 숫자 뽑기\n" +
+        "이번: " +
+        fmtN(n) +
+        "/1 (이 이상 확률 " +
+        fmtP(pRare) +
+        ")\n" +
+        "BEST: " +
+        (best ? fmtN(best) + "/1" : "-");
+
       try {
         if (navigator.share) {
-          await navigator.share({ title: "확률 숫자 뽑기", text: text });
+          await navigator.share({
+            title: "확률 숫자 뽑기",
+            text: text
+          });
+
           showToast("공유함");
           return;
         }
       } catch (e) {
         if (e && e.name === "AbortError") return;
       }
+
       try {
         await navigator.clipboard.writeText(text);
         showToast("복사됨");
       } catch (e2) {
         const ta = document.createElement("textarea");
         ta.value = text;
+
         document.body.appendChild(ta);
         ta.select();
+
         document.execCommand("copy");
         ta.remove();
+
         showToast("복사됨");
       }
     }
+
     function bindPress(el, fn) {
-      const on = function() { el.classList.add("pressed"); };
-      const off = function() { el.classList.remove("pressed"); };
-      el.addEventListener("pointerdown", function(e) { e.preventDefault(); on(); vibrate(12); });
-      el.addEventListener("pointerup", function(e) { e.preventDefault(); off(); fn(); });
+      const on = function() {
+        el.classList.add("pressed");
+      };
+
+      const off = function() {
+        el.classList.remove("pressed");
+      };
+
+      el.addEventListener("pointerdown", function(e) {
+        e.preventDefault();
+        on();
+        vibrate(12);
+      });
+
+      el.addEventListener("pointerup", function(e) {
+        e.preventDefault();
+        off();
+        fn();
+      });
+
       el.addEventListener("pointercancel", off);
       el.addEventListener("pointerleave", off);
     }
-    bindPress(go, function() { vibrate([8, 18, 12]); getAudio(); if (bgmOn && !bgmNodes) startBgm(); tryPick(false); });
-    bindPress(autoBtn, function() { vibrate(10); toggleAuto(); });
-    bindPress(shareBtn, function() { vibrate(10); share(); });
-    bindPress(buyBtn, function() { vibrate(10); buyMult(); });
-    bindPress(buySpeedBtn, function() { vibrate(10); buySpeed(); });
-    bindPress(buyEarnBtn, function() { vibrate(10); buyEarn(); });
-    bindPress(resetBtn, function() { vibrate(10); doReset(); });
+
+    bindPress(go, function() {
+      vibrate([8, 18, 12]);
+      getAudio();
+
+      if (bgmOn && !bgmNodes) {
+        startBgm();
+      }
+
+      tryPick(false);
+    });
+
+    bindPress(autoBtn, function() {
+      vibrate(10);
+      toggleAuto();
+    });
+
+    bindPress(shareBtn, function() {
+      vibrate(10);
+      share();
+    });
+
+    bindPress(buyBtn, function() {
+      vibrate(10);
+      buyMult();
+    });
+
+    bindPress(buySpeedBtn, function() {
+      vibrate(10);
+      buySpeed();
+    });
+
+    bindPress(buyEarnBtn, function() {
+      vibrate(10);
+      buyEarn();
+    });
+
+    bindPress(resetBtn, function() {
+      vibrate(10);
+      doReset();
+    });
+
     (function setupSpeedCtrl() {
-      const slider = document.getElementById("cdSlider");
-      const slow = document.getElementById("cdSlow");
-      const fast = document.getElementById("cdFast");
+      const slider =
+        document.getElementById("cdSlider");
+
+      const slow =
+        document.getElementById("cdSlow");
+
+      const fast =
+        document.getElementById("cdFast");
+
       if (!slider) return;
+
       slider.addEventListener("input", function() {
         setUserCd(sliderToCd(slider.value));
       });
+
       slow.addEventListener("click", function() {
         setUserCd(getCD() + 25);
-        showToast("느리게 " + (getCD() / 1000).toFixed(2) + "초");
+
+        showToast(
+          "느리게 " +
+          (getCD() / 1000).toFixed(2) +
+          "초"
+        );
       });
+
       fast.addEventListener("click", function() {
         setUserCd(getCD() - 25);
-        showToast("빠르게 " + (getCD() / 1000).toFixed(2) + "초");
+
+        showToast(
+          "빠르게 " +
+          (getCD() / 1000).toFixed(2) +
+          "초"
+        );
       });
     })();
+
     (function setupCutSet() {
-      const input = document.getElementById("cutInput");
-      const apply = document.getElementById("cutApply");
+      const input =
+        document.getElementById("cutInput");
+
+      const apply =
+        document.getElementById("cutApply");
+
       if (!input || !apply) return;
-      input.value = String(save.cutAt || 10000);
+
+      input.value =
+        String(save.cutAt || 10000);
+
       function applyCut() {
         var v = parseInt(input.value, 10);
+
         if (!isFinite(v)) v = 10000;
-        v = Math.max(MIN, Math.min(MAX, v));
+
+        v = Math.max(
+          MIN,
+          Math.min(MAX, v)
+        );
+
         save.cutAt = v;
         input.value = String(v);
+
         persist();
-        showToast("컷씬 " + fmtN(v) + "/1 부터");
+
+        showToast(
+          "컷씬 " +
+          fmtN(v) +
+          "/1 부터"
+        );
+
         beep(520, 70, 0.06);
       }
+
       apply.addEventListener("click", applyCut);
       input.addEventListener("change", applyCut);
+
       input.addEventListener("keydown", function(e) {
-        if (e.key === "Enter") applyCut();
+        if (e.key === "Enter") {
+          applyCut();
+        }
       });
     })();
+
     (function setupDevCode() {
-      const input = document.getElementById("devCodeInput");
-      const apply = document.getElementById("devCodeApply");
+      const input =
+        document.getElementById("devCodeInput");
+
+      const apply =
+        document.getElementById("devCodeApply");
+
       if (!input || !apply) return;
+
       function tryCode() {
-        const v = (input.value || "").trim().toUpperCase();
+        const raw =
+          (input.value || "").trim();
+
+        const v =
+          raw.toUpperCase();
+
         if (!v) return;
-        if (v === DEV_CODE) {
-          save.devMode = true;
-          persist();
-          input.value = "";
-          renderDevPanel();
-          renderEcon();
-          showToast("개발자 모드 ON");
-          beep(880, 90, 0.08);
-          setTimeout(function() { beep(1175, 140, 0.08); }, 90);
-        } else {
+
+        const entry =
+          COUPONS[v] ||
+          COUPONS[raw];
+
+        if (!entry) {
           showToast("코드 불일치");
           input.value = "";
+          return;
         }
+
+        if (
+          entry.once &&
+          save.usedCodes[v]
+        ) {
+          showToast("이미 사용한 쿠폰");
+          input.value = "";
+          return;
+        }
+
+        entry.apply();
+
+        if (entry.once) {
+          save.usedCodes[v] = true;
+        }
+
+        persist();
+        input.value = "";
+
+        renderDevPanel();
+        renderEcon();
+
+        beep(880, 90, 0.08);
       }
+
       apply.addEventListener("click", tryCode);
+
       input.addEventListener("keydown", function(e) {
-        if (e.key === "Enter") tryCode();
+        if (e.key === "Enter") {
+          tryCode();
+        }
       });
     })();
+
     (function setupDevPanel() {
-      const speedInput = document.getElementById("devSpeedInput");
-      const speedApply = document.getElementById("devSpeedApply");
-      const luckInput = document.getElementById("devLuckInput");
-      const luckApply = document.getElementById("devLuckApply");
-      const offBtn = document.getElementById("devOff");
+      const speedInput =
+        document.getElementById("devSpeedInput");
+
+      const speedApply =
+        document.getElementById("devSpeedApply");
+
+      const luckInput =
+        document.getElementById("devLuckInput");
+
+      const luckApply =
+        document.getElementById("devLuckApply");
+
+      const offBtn =
+        document.getElementById("devOff");
+
       if (speedApply && speedInput) {
         speedApply.addEventListener("click", function() {
-          const v = parseInt(speedInput.value, 10);
+          const v =
+            parseInt(speedInput.value, 10);
+
           if (!isFinite(v) || v < 1) {
             showToast("숫자를 입력하세요");
             return;
           }
+
           setUserCd(v);
           renderDevPanel();
-          showToast("DEV 속도 " + (getCD() / 1000).toFixed(3) + "초");
+
+          showToast(
+            "DEV 속도 " +
+            (getCD() / 1000).toFixed(3) +
+            "초"
+          );
+
           beep(440, 70, 0.06);
         });
       }
+
       if (luckApply && luckInput) {
         luckApply.addEventListener("click", function() {
-          const v = parseFloat(luckInput.value);
+          const v =
+            parseFloat(luckInput.value);
+
           if (!isFinite(v) || v < 1) {
             showToast("숫자를 입력하세요");
             return;
           }
+
           setDevLuck(v);
         });
       }
+
       if (offBtn) {
         offBtn.addEventListener("click", function() {
           save.devMode = false;
-          luck = Math.pow(2, save.buys || 0);
+
+          luck =
+            Math.pow(2, save.buys || 0);
+
           persist();
           renderDevPanel();
           renderEcon();
           restartAutoTimers();
+
           showToast("개발자 모드 OFF");
         });
       }
     })();
-    bindPress(sfxBtn, function() { vibrate(8); toggleSfx(); });
-    bindPress(bgmBtn, function() { vibrate(8); toggleBgm(); });
-    bindPress(fxBtn, function() { vibrate(8); toggleFx(); });
-    bindPress(shakeBtn, function() { vibrate(8); toggleShake(); });
-    const menuBtn = document.getElementById("menuBtn");
-    const menuBg = document.getElementById("menuBg");
-    const menuPanel = document.getElementById("menuPanel");
-    const menuClose = document.getElementById("menuClose");
-    function openMenu() {
+
+    bindPress(sfxBtn, function() {
+      vibrate(8);
+      toggleSfx();
+    });
+
+    bindPress(bgmBtn, function() {
+      vibrate(8);
+      toggleBgm();
+    });
+
+    bindPress(fxBtn, function() {
+      vibrate(8);
+      toggleFx();
+    });
+
+    bindPress(shakeBtn, function() {
+      vibrate(8);
+      toggleShake();
+    });
+
+    const menuBtn =
+      document.getElementById("menuBtn");
+
+    const menuBg =
+      document.getElementById("menuBg");
+
+    const menuPanel =
+      document.getElementById("menuPanel");
+
+    const menuClose =
+      document.getElementById("menuClose");
+
+    const titleScreen =
+      document.getElementById("titleScreen");
+
+    const titleStart =
+      document.getElementById("titleStart");
+
+    let menuOpenFlag = false;
+
+    function openMenu(tab) {
       if (!menuBg || !menuPanel) return;
+
       menuBg.classList.add("on");
       menuPanel.classList.add("on");
+
+      menuOpenFlag = true;
+
+      try {
+        history.pushState(
+          { panel: "menu" },
+          ""
+        );
+      } catch (e) {}
+
+      if (tab) {
+        switchTab(tab);
+      }
+
       try {
         renderEcon();
         renderAudioBtns();
         renderAutoBtn();
         renderDevPanel();
+        renderWorlds();
       } catch (e) {}
     }
+
     function closeMenu() {
-      if (menuBg) menuBg.classList.remove("on");
-      if (menuPanel) menuPanel.classList.remove("on");
+      if (menuBg) {
+        menuBg.classList.remove("on");
+      }
+
+      if (menuPanel) {
+        menuPanel.classList.remove("on");
+      }
+
+      menuOpenFlag = false;
     }
+
+    function switchTab(name) {
+      document
+        .querySelectorAll(".menu-tabs button")
+        .forEach(function(b) {
+          b.classList.toggle(
+            "on",
+            b.getAttribute("data-tab") === name
+          );
+        });
+
+      document
+        .querySelectorAll(".menu-sec")
+        .forEach(function(s) {
+          s.classList.toggle(
+            "on",
+            s.id ===
+              "tab" +
+              name.charAt(0).toUpperCase() +
+              name.slice(1)
+          );
+        });
+
+      const map = {
+        shop: "상점",
+        settings: "설정",
+        menu: "메뉴"
+      };
+
+      const mt =
+        document.getElementById("menuTitle");
+
+      if (mt) {
+        mt.textContent =
+          map[name] || "메뉴";
+      }
+    }
+
+    document
+      .querySelectorAll(".menu-tabs button")
+      .forEach(function(b) {
+        b.addEventListener("click", function() {
+          switchTab(
+            b.getAttribute("data-tab")
+          );
+        });
+      });
+
+    document
+      .querySelectorAll("#worldRow button")
+      .forEach(function(b) {
+        b.addEventListener("click", function() {
+          setWorld(
+            b.getAttribute("data-world")
+          );
+        });
+      });
+
+    const rebirthBtn =
+      document.getElementById("rebirthBtn");
+
+    if (rebirthBtn) {
+      rebirthBtn.addEventListener(
+        "click",
+        function() {
+          vibrate(10);
+          doRebirth();
+        }
+      );
+    }
+
+    const goTitle =
+      document.getElementById("goTitle");
+
+    if (goTitle) {
+      goTitle.addEventListener(
+        "click",
+        function() {
+          closeMenu();
+
+          if (autoOn) {
+            toggleAuto();
+          }
+
+          if (titleScreen) {
+            titleScreen.classList.remove("hide");
+          }
+
+          document.body.classList.add("on-title");
+        }
+      );
+    }
+
+    if (titleScreen) {
+      document.body.classList.add("on-title");
+    }
+
+    if (titleStart) {
+      titleStart.addEventListener(
+        "click",
+        function() {
+          if (titleScreen) {
+            titleScreen.classList.add("hide");
+          }
+
+          document.body.classList.remove("on-title");
+
+          renderWorlds();
+          renderEcon();
+        }
+      );
+    }
+
+    if (goTitle) {
+      // already bound above — ensure title class
+    }
+
+    window.addEventListener(
+      "popstate",
+      function() {
+        if (menuOpenFlag) {
+          closeMenu();
+
+          try {
+            history.pushState(
+              { game: 1 },
+              ""
+            );
+          } catch (e) {}
+        }
+      }
+    );
+
+    try {
+      history.replaceState(
+        { game: 1 },
+        ""
+      );
+    } catch (e) {}
+
     if (menuBtn) {
       menuBtn.style.zIndex = "100";
-      menuBtn.addEventListener("click", function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        vibrate(8);
-        openMenu();
-      }, { passive: false });
+
+      menuBtn.addEventListener(
+        "click",
+        function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+
+          vibrate(8);
+          openMenu("shop");
+        },
+        { passive: false }
+      );
     }
+
     if (menuClose) {
-      menuClose.addEventListener("click", function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        closeMenu();
-      });
+      menuClose.addEventListener(
+        "click",
+        function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+
+          closeMenu();
+        }
+      );
     }
+
     if (menuBg) {
-      menuBg.addEventListener("click", function(e) {
-        e.preventDefault();
-        closeMenu();
-      });
+      menuBg.addEventListener(
+        "click",
+        function(e) {
+          e.preventDefault();
+          closeMenu();
+        }
+      );
     }
-    // panel clicks should not close
+
     if (menuPanel) {
-      menuPanel.addEventListener("click", function(e) { e.stopPropagation(); });
+      menuPanel.addEventListener(
+        "click",
+        function(e) {
+          e.stopPropagation();
+        }
+      );
     }
+
     (function setupSwipeMenu() {
       const EDGE_PX = 28;
       const THRESH = 45;
-      let startX = null, startY = null, startEdge = false, ignoreSwipe = false, activeId = null;
+
+      let startX = null,
+          startY = null,
+          startEdge = false,
+          ignoreSwipe = false,
+          activeId = null;
+
       function onDown(e) {
-        if (e.pointerType === "mouse" && e.button !== 0) return;
+        if (
+          e.pointerType === "mouse" &&
+          e.button !== 0
+        ) return;
+
         startX = e.clientX;
         startY = e.clientY;
         activeId = e.pointerId;
-        startEdge = (window.innerWidth - e.clientX) <= EDGE_PX;
-        ignoreSwipe = !!(e.target && e.target.closest && e.target.closest("#cdSlider"));
+
+        startEdge =
+          (window.innerWidth - e.clientX) <= EDGE_PX;
+
+        ignoreSwipe =
+          !!(
+            e.target &&
+            e.target.closest &&
+            e.target.closest("#cdSlider")
+          );
       }
+
       function onUp(e) {
-        if (startX == null || e.pointerId !== activeId) return;
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
-        const sEdge = startEdge, ig = ignoreSwipe;
-        startX = null; startY = null; startEdge = false; ignoreSwipe = false; activeId = null;
-        if (ig || Math.abs(dy) > 70 || !menuPanel) return;
-        const isOpen = menuPanel.classList.contains("on");
-        if (!isOpen && sEdge && dx < -THRESH) {
+        if (
+          startX == null ||
+          e.pointerId !== activeId
+        ) return;
+
+        const dx =
+          e.clientX - startX;
+
+        const dy =
+          e.clientY - startY;
+
+        const sEdge = startEdge;
+        const ig = ignoreSwipe;
+
+        startX = null;
+        startY = null;
+        startEdge = false;
+        ignoreSwipe = false;
+        activeId = null;
+
+        if (
+          ig ||
+          Math.abs(dy) > 70 ||
+          !menuPanel
+        ) return;
+
+        const isOpen =
+          menuPanel.classList.contains("on");
+
+        if (
+          !isOpen &&
+          sEdge &&
+          dx < -THRESH
+        ) {
           vibrate(8);
           openMenu();
-        } else if (isOpen && dx > THRESH) {
+        } else if (
+          isOpen &&
+          dx > THRESH
+        ) {
           vibrate(8);
           closeMenu();
         }
       }
-      document.addEventListener("pointerdown", onDown, { passive: true });
-      document.addEventListener("pointerup", onUp, { passive: true });
-      document.addEventListener("pointercancel", function() {
-        startX = null; startY = null; startEdge = false; ignoreSwipe = false; activeId = null;
-      }, { passive: true });
+
+      document.addEventListener(
+        "pointerdown",
+        onDown,
+        { passive: true }
+      );
+
+      document.addEventListener(
+        "pointerup",
+        onUp,
+        { passive: true }
+      );
+
+      document.addEventListener(
+        "pointercancel",
+        function() {
+          startX = null;
+          startY = null;
+          startEdge = false;
+          ignoreSwipe = false;
+          activeId = null;
+        },
+        { passive: true }
+      );
     })();
+
     renderEcon();
     renderAudioBtns();
     renderAutoBtn();
     renderDevPanel();
-    document.addEventListener("visibilitychange", function() {
-      if (document.visibilityState === "visible") {
-        catchUp();
-        renderBest();
-        if (last) {
-          oddsEl.textContent = fmtN(last.n) + "/1";
-          oddsEl.className = "odds " + cls(last.n);
+    renderWorlds();
+
+    (function() {
+      const sub =
+        document.querySelector(".sub");
+
+      if (
+        sub &&
+        WORLDS[save.world]
+      ) {
+        sub.textContent =
+          "월드" +
+          save.world +
+          " · 최대 " +
+          WORLDS[save.world].label +
+          "/1";
+      }
+    })();
+
+    document.addEventListener(
+      "visibilitychange",
+      function() {
+        if (
+          document.visibilityState === "visible"
+        ) {
+          catchUp();
+          renderBest();
+
+          if (last) {
+            oddsEl.textContent =
+              fmtN(last.n) + "/1";
+
+            oddsEl.className =
+              "odds " + cls(last.n);
+          }
         }
       }
-    });
-    window.addEventListener("pagehide", function() {
-      if (best) localStorage.setItem(KEY, String(best));
-    });
+    );
+
+    window.addEventListener(
+      "pagehide",
+      function() {
+        if (best) {
+          localStorage.setItem(
+            KEY,
+            String(best)
+          );
+        }
+      }
+    );
+
     renderBest();
   </script>
 </body>
